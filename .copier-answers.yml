@@ -1,0 +1,15 @@
+# Changes here will be overwritten by Copier; NEVER EDIT MANUALLY
+_commit: v3.2.3-14-ga671d48
+_src_path: .
+author_email: klaas@mrgreenoffices.nl
+author_name: Klaas Schoute
+github_sponsors: false
+github_username: MrGreenBoutiqueOffices
+kofi_funding: false
+package_name: pynetlink
+project_name: Netlink
+project_short_description: ''
+project_slug: netlink
+run_poetry_install: false
+software_license: MIT License
+tweet_on_release: false
