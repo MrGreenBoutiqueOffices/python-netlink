@@ -15,7 +15,6 @@
 
 [![Build Status][build-shield]][build-url]
 [![Typing Status][typing-shield]][typing-url]
-[![Maintainability][maintainability-shield]][maintainability-url]
 [![Code Coverage][codecov-shield]][codecov-url]
 [![OpenSSF Scorecard][scorecard-shield]][scorecard-url]
 
@@ -217,8 +216,6 @@ This project is licensed under the GNU Lesser General Public License v3.0 or lat
 [downloads-url]: https://pypistats.org/packages/pynetlink
 [last-commit-shield]: https://img.shields.io/github/last-commit/MrGreenBoutiqueOffices/python-netlink.svg
 [license-shield]: https://img.shields.io/github/license/MrGreenBoutiqueOffices/python-netlink.svg
-[maintainability-shield]: https://api.codeclimate.com/v1/badges/TOKEN/maintainability
-[maintainability-url]: https://codeclimate.com/github/MrGreenBoutiqueOffices/python-netlink/maintainability
 [maintenance-shield]: https://img.shields.io/maintenance/yes/2025.svg
 [project-stage-shield]: https://img.shields.io/badge/project%20stage-production%20ready-brightgreen.svg
 [pypi]: https://pypi.org/project/pynetlink/
