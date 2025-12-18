@@ -1,0 +1,17 @@
+{
+  "bus": 20,
+  "power": "on",
+  "source": "HDMI1",
+  "brightness": 72,
+  "volume": 50,
+  "model": "Dell U2723QE",
+  "type": "monitor",
+  "sn": "ABC123XYZ",
+  "supports": {
+    "power": true,
+    "brightness": true,
+    "volume": true,
+    "source": true
+  },
+  "source_options": ["HDMI1", "HDMI2", "USBC", "DP"]
+}

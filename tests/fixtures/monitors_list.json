@@ -1,0 +1,14 @@
+[
+  {
+    "id": 0,
+    "bus": 20,
+    "model": "Dell U2723QE",
+    "type": "monitor"
+  },
+  {
+    "id": 1,
+    "bus": 21,
+    "model": "Waveshare 10.1",
+    "type": "monitor"
+  }
+]
