@@ -24,14 +24,14 @@ jobs:
       id-token: write
     steps:
       - name: ⤵️ Check out code from GitHub
-        uses: actions/checkout@v6.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
         with:
           persist-credentials: false
       - name: 🏗 Set up Poetry
         run: pipx install poetry
       - name: 🏗 Set up Python ${{ env.DEFAULT_PYTHON }}
         id: python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@83679a892e2d95755f2dac6acb0bfd1e9ac5d548 # v6
         with:
           python-version: ${{ env.DEFAULT_PYTHON }}
           cache: "poetry" # zizmor: ignore[cache-poisoning] - Low risk: release-only trigger, pinned actions, PyPI verification
@@ -52,7 +52,7 @@ jobs:
       - name: 🏗 Build package
         run: poetry build --no-interaction
       - name: 🚀 Publish package to PyPi
-        uses: pypa/gh-action-pypi-publish@v1.13.0
+        uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # v1.13.0
         with:
           verbose: true
           print-hash: true
