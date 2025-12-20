@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import asdict
 
 import pytest
 from syrupy.assertion import SnapshotAssertion
@@ -36,7 +37,7 @@ def test_desk_state_from_dict(snapshot: SnapshotAssertion) -> None:
     assert desk_state.to_dict() == snapshot
 
 
-def test_desk_state_validation() -> None:
+def test_desk_state_validation(snapshot: SnapshotAssertion) -> None:
     """Test DeskState validation."""
     # Valid height range
     valid_state = DeskState(
@@ -45,6 +46,7 @@ def test_desk_state_validation() -> None:
         moving=False,
     )
     assert valid_state.height == 75.0
+    assert valid_state.to_dict() == snapshot
 
     # Invalid height - too low
     with pytest.raises(ValueError, match="Height must be between"):
@@ -98,7 +100,7 @@ def test_monitor_state_from_dict(snapshot: SnapshotAssertion) -> None:
     assert monitor_state.to_dict() == snapshot
 
 
-def test_monitor_state_validation() -> None:
+def test_monitor_state_validation(snapshot: SnapshotAssertion) -> None:
     """Test MonitorState brightness and volume validation."""
     # Valid brightness and volume
     valid_state = MonitorState(
@@ -109,6 +111,7 @@ def test_monitor_state_validation() -> None:
     )
     assert valid_state.brightness == 50
     assert valid_state.volume == 50
+    assert valid_state.to_dict() == snapshot
 
     # Invalid brightness - too low
     with pytest.raises(ValueError, match="Brightness must be 0-100"):
@@ -143,7 +146,7 @@ def test_monitor_state_validation() -> None:
         )
 
 
-def test_monitor_state_bus_int_or_str() -> None:
+def test_monitor_state_bus_int_or_str(snapshot: SnapshotAssertion) -> None:
     """Test MonitorState accepts both int and str for bus_id."""
     # Bus as int
     state_int = MonitorState(bus=20, power="on")
@@ -152,6 +155,7 @@ def test_monitor_state_bus_int_or_str() -> None:
     # Bus as str
     state_str = MonitorState(bus="20", power="on")
     assert state_str.bus == "20"
+    assert {"int": state_int.to_dict(), "str": state_str.to_dict()} == snapshot
 
 
 def test_browser_state_from_dict(snapshot: SnapshotAssertion) -> None:
@@ -180,13 +184,13 @@ def test_device_info_from_dict(snapshot: SnapshotAssertion) -> None:
     assert device_info.to_dict() == snapshot
 
 
-def test_netlink_device_from_zeroconf() -> None:
+def test_netlink_device_from_zeroconf(snapshot: SnapshotAssertion) -> None:
     """Test NetlinkDevice creation from Zeroconf data."""
     device = NetlinkDevice(
-        name="Office Desk 1",
         host="192.168.1.100",
         port=80,
         device_id="abc123",
+        device_name="Office Desk 1",
         model="netlink-v2",
         version="1.2.3",
         api_version="1.0",
@@ -195,19 +199,20 @@ def test_netlink_device_from_zeroconf() -> None:
         ws_path="/socket.io",
     )
 
-    assert device.name == "Office Desk 1"
     assert device.host == "192.168.1.100"
     assert device.port == 80
     assert device.device_id == "abc123"
+    assert device.device_name == "Office Desk 1"
     assert device.model == "netlink-v2"
     assert device.version == "1.2.3"
     assert device.api_version == "1.0"
     assert device.has_desk is True
     assert device.monitors == ["20", "21"]
     assert device.ws_path == "/socket.io"
+    assert asdict(device) == snapshot
 
 
-def test_desk_state_optional_fields() -> None:
+def test_desk_state_optional_fields(snapshot: SnapshotAssertion) -> None:
     """Test DeskState with minimal required fields."""
     desk_state = DeskState(
         height=75.0,
@@ -218,6 +223,7 @@ def test_desk_state_optional_fields() -> None:
     assert desk_state.height == 75.0
     assert desk_state.mode == "idle"
     assert desk_state.moving is False
+    assert desk_state.to_dict() == snapshot
     assert desk_state.error is None
     assert desk_state.target is None
     assert desk_state.capabilities is None

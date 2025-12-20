@@ -15,10 +15,10 @@ class NetlinkDevice:
 
     Attributes
     ----------
-        name: Device name
         host: IP address or hostname
         port: WebSocket/HTTP port
         device_id: Unique device identifier
+        device_name: Device name
         model: Device model
         version: Software version
         api_version: API version
@@ -28,10 +28,10 @@ class NetlinkDevice:
 
     """
 
-    name: str
     host: str
     port: int
     device_id: str
+    device_name: str
     model: str
     version: str
     api_version: str
@@ -66,10 +66,10 @@ class NetlinkDevice:
         port = int(info.port) if info.port is not None else 0
 
         return cls(
-            name=properties.get("name", "Unknown"),
             host=host,
             port=port,
             device_id=properties.get("device_id", ""),
+            device_name=properties.get("device_name", "Unknown"),
             model=properties.get("model", ""),
             version=properties.get("version", ""),
             api_version=properties.get("api_version", "v1"),
