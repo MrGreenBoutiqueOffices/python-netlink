@@ -106,6 +106,22 @@ async def test_client_monitors_property() -> None:
     assert client.monitors["20"].brightness == 72
 
 
+async def test_client_device_info_property() -> None:
+    """Test device_info property returns cached device info."""
+    client = NetlinkClient(host="192.168.1.100", token="test-token")
+
+    # Initially None
+    assert client.device_info is None
+
+    device_data = load_fixtures("device_info.json")
+    await client._on_device_info(device_data)
+
+    # Should return cached state
+    assert client.device_info is not None
+    assert client.device_info.device_name == "Office Desk 1"
+    assert client.device_info.model == "NetOS Desk"
+
+
 async def test_client_on_desk_state_nested_data() -> None:
     """Test _on_desk_state extracts nested data structure."""
     client = NetlinkClient(host="192.168.1.100", token="test-token")
@@ -141,6 +157,52 @@ async def test_client_on_monitor_state_uses_string_key() -> None:
     # Should use string key "20"
     assert "20" in client.monitors
     assert client.monitors["20"].bus == 20
+
+
+async def test_client_on_device_info_nested_data() -> None:
+    """Test _on_device_info extracts nested data structure."""
+    client = NetlinkClient(host="192.168.1.100", token="test-token")
+
+    nested_data = {
+        "data": {
+            "device_id": "abc123def456",
+            "device_name": "Office Desk 1",
+            "version": "1.2.3",
+            "api_version": "1.0",
+            "model": "NetOS Desk",
+        }
+    }
+
+    await client._on_device_info(nested_data)
+
+    assert client.device_info is not None
+    assert client.device_info.device_id == "abc123def456"
+    assert client.device_info.model == "NetOS Desk"
+
+
+async def test_client_get_device_info(aresponses: ResponsesMockServer) -> None:
+    """Test get_device_info delegates to REST."""
+    aresponses.add(
+        "192.168.1.100",
+        "/api/v1/device/info",
+        METH_GET,
+        aresponses.Response(
+            status=200,
+            headers={"Content-Type": "application/json"},
+            text=load_fixtures("device_info.json"),
+        ),
+    )
+
+    async with ClientSession() as session:
+        client = NetlinkClient(
+            host="192.168.1.100",
+            token="test-token",
+            session=session,
+        )
+        client._rest._session = session
+
+        info = await client.get_device_info()
+        assert info.device_id == "abc123def456"
 
 
 async def test_client_get_desk_status(aresponses: ResponsesMockServer) -> None:
