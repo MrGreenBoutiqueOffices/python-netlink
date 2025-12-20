@@ -30,6 +30,13 @@ async def main() -> None:
                 f"brightness={data.get('brightness')}"
             )
 
+        @client.on("device.info")
+        async def on_device_info(data: dict) -> None:
+            print(
+                f"Device info: {data.get('device_name')} "
+                f"({data.get('model')}) v{data.get('version')}"
+            )
+
         await asyncio.sleep(2)
 
         if client.desk_state:
@@ -37,9 +44,18 @@ async def main() -> None:
             print(f"Desk mode: {client.desk_state.mode}")
             print(f"Desk moving: {client.desk_state.moving}")
 
+        if client.device_info:
+            print(f"\nDevice name: {client.device_info.device_name}")
+            print(f"Device model: {client.device_info.model}")
+            print(f"Device version: {client.device_info.version}")
+
         print("\nFetching desk status via REST API...")
         desk_status = await client.get_desk_status()
         print(f"Controller connected: {desk_status.controller_connected}")
+
+        print("\nFetching device info via REST API...")
+        device_info = await client.get_device_info()
+        print(f"Device ID: {device_info.device_id}")
 
         print("\nSetting desk height to 110cm...")
         response = await client.set_desk_height(110.0)
