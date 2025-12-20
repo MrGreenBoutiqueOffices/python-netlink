@@ -81,10 +81,10 @@ async def test_netlink_device_from_service_info() -> None:
     mock_service_info.port = 80
     mock_service_info.name = "Office Netlink._netlink._tcp.local."
     mock_service_info.properties = {
-        b"name": b"Office Netlink",
         b"version": b"2.0.0",
         b"model": b"netlink-pro",
         b"device_id": b"abc123",
+        b"device_name": b"Office Netlink",
         b"has_desk": b"true",
         b"monitors": b"20,21",
     }
@@ -93,10 +93,10 @@ async def test_netlink_device_from_service_info() -> None:
 
     assert device.host == "192.168.1.100"
     assert device.port == 80
-    assert device.name == "Office Netlink"
     assert device.version == "2.0.0"
     assert device.model == "netlink-pro"
     assert device.device_id == "abc123"
+    assert device.device_name == "Office Netlink"
     assert device.has_desk is True
     assert device.monitors == ["20", "21"]
 
@@ -127,7 +127,7 @@ async def test_netlink_device_from_service_info_missing_properties() -> None:
 
     device = NetlinkDevice.from_service_info(mock_service_info)
 
-    assert device.name == "Unknown"
+    assert device.device_name == "Unknown"
     assert device.host == ""  # No parsed addresses
     assert not device.monitors
     assert device.ws_path == "/socket.io"

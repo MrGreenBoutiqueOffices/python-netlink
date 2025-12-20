@@ -24,6 +24,30 @@
     'target': None,
   })
 # ---
+# name: test_desk_state_validation
+  dict({
+    'beep': None,
+    'capabilities': None,
+    'error': None,
+    'height': 75.0,
+    'inventory': None,
+    'mode': 'idle',
+    'moving': False,
+    'target': None,
+  })
+# ---
+# name: test_desk_state_optional_fields
+  dict({
+    'beep': None,
+    'capabilities': None,
+    'error': None,
+    'height': 75.0,
+    'inventory': None,
+    'mode': 'idle',
+    'moving': False,
+    'target': None,
+  })
+# ---
 # name: test_desk_status_from_dict
   dict({
     'controller_connected': True,
@@ -57,6 +81,48 @@
     'volume': 50,
   })
 # ---
+# name: test_monitor_state_validation
+  dict({
+    'brightness': 50,
+    'bus': 20,
+    'model': None,
+    'power': 'on',
+    'sn': None,
+    'source': None,
+    'source_options': None,
+    'supports': None,
+    'type': None,
+    'volume': 50,
+  })
+# ---
+# name: test_monitor_state_bus_int_or_str
+  dict({
+    'int': dict({
+      'brightness': None,
+      'bus': 20,
+      'model': None,
+      'power': 'on',
+      'sn': None,
+      'source': None,
+      'source_options': None,
+      'supports': None,
+      'type': None,
+      'volume': None,
+    }),
+    'str': dict({
+      'brightness': None,
+      'bus': '20',
+      'model': None,
+      'power': 'on',
+      'sn': None,
+      'source': None,
+      'source_options': None,
+      'supports': None,
+      'type': None,
+      'volume': None,
+    }),
+  })
+# ---
 # name: test_device_info_from_dict
   dict({
     'api_version': '1.0',
@@ -64,5 +130,22 @@
     'device_name': 'Office Desk 1',
     'model': 'NetOS Desk',
     'version': '1.2.3',
+  })
+# ---
+# name: test_netlink_device_from_zeroconf
+  dict({
+    'api_version': '1.0',
+    'device_id': 'abc123',
+    'device_name': 'Office Desk 1',
+    'has_desk': True,
+    'host': '192.168.1.100',
+    'model': 'netlink-v2',
+    'monitors': list([
+      '20',
+      '21',
+    ]),
+    'port': 80,
+    'version': '1.2.3',
+    'ws_path': '/socket.io',
   })
 # ---
