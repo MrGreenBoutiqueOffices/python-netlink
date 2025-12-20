@@ -17,7 +17,7 @@ from .exceptions import (
     NetlinkConnectionError,
     NetlinkTimeoutError,
 )
-from .models import BrowserState, DeskStatus, MonitorState, MonitorSummary
+from .models import BrowserState, DeskStatus, DeviceInfo, MonitorState, MonitorSummary
 
 VERSION = metadata.version(__package__ or "pynetlink")
 
@@ -111,6 +111,18 @@ class NetlinkREST:
             raise NetlinkConnectionError(msg) from err
 
         return await response.json()
+
+    # Device endpoints
+    async def get_device_info(self) -> DeviceInfo:
+        """Get device information.
+
+        Returns
+        -------
+            Complete device information including ID, name, version, and model
+
+        """
+        data = await self._request("device/info")
+        return DeviceInfo.from_dict(data)
 
     # Desk endpoints
     async def get_desk_status(self) -> DeskStatus:

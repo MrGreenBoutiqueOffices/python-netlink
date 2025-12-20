@@ -8,24 +8,24 @@ from mashumaro import DataClassDictMixin
 
 
 @dataclass
-class SystemInfo(DataClassDictMixin):
-    """System information from WebSocket `system.info` event.
+class DeviceInfo(DataClassDictMixin):
+    """Device information from WebSocket `device.info` event or REST API.
 
     Attributes
     ----------
+        device_id: Unique device identifier (BALENA_DEVICE_UUID or MAC address)
+        device_name: Device name from Balena
         version: Netlink software version
         api_version: API version
-        device_id: Unique device identifier
-        device_name: Device name
-        uptime: System uptime in seconds
+        model: Device model (e.g., "NetOS Desk")
 
     """
 
-    version: str
-    api_version: str
     device_id: str
     device_name: str
-    uptime: int
+    version: str
+    api_version: str
+    model: str
 
 
 @dataclass

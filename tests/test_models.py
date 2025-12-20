@@ -11,9 +11,9 @@ from pynetlink.models import (
     BrowserState,
     DeskState,
     DeskStatus,
+    DeviceInfo,
     MonitorState,
     NetlinkDevice,
-    SystemInfo,
 )
 
 from . import load_fixtures
@@ -165,19 +165,19 @@ def test_browser_state_from_dict(snapshot: SnapshotAssertion) -> None:
     assert browser_state.to_dict() == snapshot
 
 
-def test_system_info_from_dict(snapshot: SnapshotAssertion) -> None:
-    """Test SystemInfo deserialization."""
-    data = json.loads(load_fixtures("system_info.json"))
-    system_info = SystemInfo.from_dict(data)
+def test_device_info_from_dict(snapshot: SnapshotAssertion) -> None:
+    """Test DeviceInfo deserialization."""
+    data = json.loads(load_fixtures("device_info.json"))
+    device_info = DeviceInfo.from_dict(data)
 
-    assert system_info.version == "1.2.3"
-    assert system_info.api_version == "1.0"
-    assert system_info.device_id == "abc123def456"
-    assert system_info.device_name == "Office Desk 1"
-    assert system_info.uptime == 86400
+    assert device_info.version == "1.2.3"
+    assert device_info.api_version == "1.0"
+    assert device_info.device_id == "abc123def456"
+    assert device_info.device_name == "Office Desk 1"
+    assert device_info.model == "NetOS Desk"
 
     # Snapshot test
-    assert system_info.to_dict() == snapshot
+    assert device_info.to_dict() == snapshot
 
 
 def test_netlink_device_from_zeroconf() -> None:

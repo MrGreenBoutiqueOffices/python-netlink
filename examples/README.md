@@ -133,7 +133,12 @@ Subscribe to WebSocket events for real-time state updates:
 ### Subscribe to All Events
 
 ```python
-from pynetlink import NetlinkClient, EVENT_DESK_STATE, EVENT_MONITOR_STATE
+from pynetlink import (
+    NetlinkClient,
+    EVENT_DESK_STATE,
+    EVENT_DEVICE_INFO,
+    EVENT_MONITOR_STATE,
+)
 
 async def listen_all_events() -> None:
     """Listen to all WebSocket events."""
@@ -160,10 +165,10 @@ async def listen_all_events() -> None:
             """Monitor list updated."""
             print(f"📋 Monitors: {len(data)} connected")
 
-        @client.on("system.info")
-        async def on_system_info(data: dict) -> None:
-            """System info received."""
-            print(f"ℹ️  System: {data['version']}")
+        @client.on(EVENT_DEVICE_INFO)
+        async def on_device_info(data: dict) -> None:
+            """Device info received."""
+            print(f"ℹ️  Device: {data['device_name']} ({data['model']})")
 
         # Keep connection alive to receive events
         print("Listening for events... (press Ctrl+C to stop)")
@@ -189,6 +194,12 @@ async def use_cached_state() -> None:
             print(f"Mode: {client.desk_state.mode}")
             print(f"Moving: {client.desk_state.moving}")
             print(f"Error: {client.desk_state.error or 'None'}")
+
+        # Access cached device info
+        if client.device_info:
+            print(f"\nDevice: {client.device_info.device_name}")
+            print(f"  Model: {client.device_info.model}")
+            print(f"  Version: {client.device_info.version}")
 
         # Access cached monitor states
         for bus_id, monitor in client.monitors.items():

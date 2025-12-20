@@ -9,8 +9,20 @@ from typing import TYPE_CHECKING, Any, Self
 
 from zeroconf import ServiceBrowser, ServiceListener, Zeroconf
 
-from .const import DEFAULT_REQUEST_TIMEOUT, EVENT_DESK_STATE, EVENT_MONITOR_STATE
-from .models import DeskState, DeskStatus, MonitorState, MonitorSummary, NetlinkDevice
+from .const import (
+    DEFAULT_REQUEST_TIMEOUT,
+    EVENT_DESK_STATE,
+    EVENT_DEVICE_INFO,
+    EVENT_MONITOR_STATE,
+)
+from .models import (
+    DeskState,
+    DeskStatus,
+    DeviceInfo,
+    MonitorState,
+    MonitorSummary,
+    NetlinkDevice,
+)
 from .rest import NetlinkREST
 from .websocket import NetlinkWebSocket
 
@@ -58,6 +70,7 @@ class NetlinkClient:
         init=False,
         repr=False,
     )
+    _device_info: DeviceInfo | None = field(default=None, init=False, repr=False)
 
     def __post_init__(self) -> None:
         """Initialize WebSocket and REST clients."""
@@ -67,6 +80,7 @@ class NetlinkClient:
         # Wire up WebSocket events to update internal state
         self._ws.on(EVENT_DESK_STATE)(self._on_desk_state)
         self._ws.on(EVENT_MONITOR_STATE)(self._on_monitor_state)
+        self._ws.on(EVENT_DEVICE_INFO)(self._on_device_info)
 
     async def __aenter__(self) -> Self:
         """Async context manager entry."""
@@ -135,6 +149,14 @@ class NetlinkClient:
         bus_key = str(state.bus)
         self._monitors[bus_key] = state
 
+    async def _on_device_info(self, data: str | dict[str, Any]) -> None:
+        """Update internal device info from WebSocket."""
+        # Ensure payload is parsed (fixtures may supply JSON strings)
+        payload = json.loads(data) if isinstance(data, str) else data
+        # Extract actual device info data from nested structure
+        info_data = payload.get("data", payload)
+        self._device_info = DeviceInfo.from_dict(info_data)
+
     # Properties for WebSocket state
     @property
     def desk_state(self) -> DeskState | None:
@@ -159,9 +181,31 @@ class NetlinkClient:
         return self._monitors
 
     @property
+    def device_info(self) -> DeviceInfo | None:
+        """Latest device info from WebSocket.
+
+        Returns
+        -------
+            Current device info or None if not connected
+
+        """
+        return self._device_info
+
+    @property
     def connected(self) -> bool:
         """Whether WebSocket is connected."""
         return self._ws.connected
+
+    # Device information methods (delegate to REST)
+    async def get_device_info(self) -> DeviceInfo:
+        """Get device information.
+
+        Returns
+        -------
+            Complete device information including ID, name, version, and model
+
+        """
+        return await self._rest.get_device_info()
 
     # Desk control methods (delegate to REST)
     async def get_desk_status(self) -> DeskStatus:

@@ -3,5 +3,5 @@
   "api_version": "1.0",
   "device_id": "abc123def456",
   "device_name": "Office Desk 1",
-  "uptime": 86400
+  "model": "NetOS Desk"
 }

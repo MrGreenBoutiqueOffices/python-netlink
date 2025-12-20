@@ -21,6 +21,28 @@ from pynetlink.rest import NetlinkREST
 from . import load_fixtures
 
 
+async def test_device_get_info(aresponses: ResponsesMockServer) -> None:
+    """Test GET /api/v1/device/info."""
+    aresponses.add(
+        "192.168.1.100",
+        "/api/v1/device/info",
+        METH_GET,
+        aresponses.Response(
+            status=200,
+            headers={"Content-Type": "application/json"},
+            text=load_fixtures("device_info.json"),
+        ),
+    )
+
+    async with ClientSession() as session:
+        rest = NetlinkREST(host="192.168.1.100", token="test-token")
+        rest._session = session
+        info = await rest.get_device_info()
+
+        assert info.device_id == "abc123def456"
+        assert info.model == "NetOS Desk"
+
+
 async def test_desk_get_status(aresponses: ResponsesMockServer) -> None:
     """Test GET /api/v1/desk/status."""
     aresponses.add(

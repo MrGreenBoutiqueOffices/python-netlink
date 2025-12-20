@@ -14,7 +14,7 @@ EVENT_DESK_STATE = "desk.state"
 EVENT_MONITOR_STATE = "monitor.state"
 EVENT_MONITORS_LIST = "monitors.list"
 EVENT_BROWSER_STATE = "browser.state"
-EVENT_SYSTEM_INFO = "system.info"
+EVENT_DEVICE_INFO = "device.info"
 EVENT_SYSTEM_MQTT = "system.mqtt"
 
 # API endpoints
