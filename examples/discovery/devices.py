@@ -21,7 +21,7 @@ async def main() -> None:
     print(f"Found {len(devices)} device(s):\n")
 
     for device in devices:
-        print(f"Device: {device.name}")
+        print(f"Device: {device.device_name}")
         print(f"  Host: {device.host}:{device.port}")
         print(f"  Device ID: {device.device_id}")
         print(f"  Model: {device.model}")
