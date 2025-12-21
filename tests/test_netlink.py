@@ -482,30 +482,6 @@ async def test_client_calibrate_desk_rest_transport(
         await client.calibrate_desk(transport="rest")
 
 
-async def test_client_beep_desk(aresponses: ResponsesMockServer) -> None:
-    """Test beep_desk delegates to REST."""
-    aresponses.add(
-        "192.168.1.100",
-        "/api/v1/desk/beep",
-        METH_POST,
-        aresponses.Response(
-            status=200,
-            headers={"Content-Type": "application/json"},
-            text=load_fixtures("success_response.json"),
-        ),
-    )
-
-    async with ClientSession() as session:
-        client = NetlinkClient(
-            host="192.168.1.100",
-            token="test-token",
-            session=session,
-        )
-        client._rest._session = session
-
-        await client.beep_desk(count=3)
-
-
 async def test_client_get_monitors(aresponses: ResponsesMockServer) -> None:
     """Test get_monitors delegates to REST."""
     aresponses.add(
@@ -1191,6 +1167,98 @@ async def test_client_set_desk_height_auto_fallback_rest(
 
         # Auto mode without WebSocket should use REST
         result = await client.set_desk_height(120.0)  # transport="auto" is default
+        assert result["status"] == "ok"
+
+
+async def test_client_set_desk_beep_websocket_transport() -> None:
+    """Test set_desk_beep with WebSocket transport."""
+    client = NetlinkClient(host="192.168.1.100", token="test-token")
+    client._ws._connected = True
+
+    with patch.object(
+        client._ws,
+        "send_command",
+        new_callable=AsyncMock,
+        return_value={"status": "ok"},
+    ) as mock_send:
+        await client.set_desk_beep(state="on", transport="websocket")
+        mock_send.assert_called_once_with(
+            "command.desk.beep",
+            {"state": "on"},
+        )
+
+
+async def test_client_set_desk_beep_rest_transport(
+    aresponses: ResponsesMockServer,
+) -> None:
+    """Test set_desk_beep with REST transport (forced)."""
+    aresponses.add(
+        "192.168.1.100",
+        "/api/v1/desk/beep",
+        METH_POST,
+        aresponses.Response(
+            status=200,
+            headers={"Content-Type": "application/json"},
+            text=load_fixtures("success_response.json"),
+        ),
+    )
+
+    async with ClientSession() as session:
+        client = NetlinkClient(
+            host="192.168.1.100",
+            token="test-token",
+            session=session,
+        )
+        client._rest._session = session
+        client._ws._connected = True
+
+        result = await client.set_desk_beep(state="off", transport="rest")
+        assert result["status"] == "ok"
+
+
+async def test_client_set_desk_beep_auto_uses_websocket() -> None:
+    """Test set_desk_beep with auto transport uses WebSocket when connected."""
+    client = NetlinkClient(host="192.168.1.100", token="test-token")
+    client._ws._connected = True
+
+    with patch.object(
+        client._ws,
+        "send_command",
+        new_callable=AsyncMock,
+        return_value={"status": "ok"},
+    ) as mock_ws:
+        await client.set_desk_beep(state="on")
+        mock_ws.assert_called_once_with(
+            "command.desk.beep",
+            {"state": "on"},
+        )
+
+
+async def test_client_set_desk_beep_auto_fallback_rest(
+    aresponses: ResponsesMockServer,
+) -> None:
+    """Auto transport falls back to REST when WebSocket is not connected."""
+    aresponses.add(
+        "192.168.1.100",
+        "/api/v1/desk/beep",
+        METH_POST,
+        aresponses.Response(
+            status=200,
+            headers={"Content-Type": "application/json"},
+            text=load_fixtures("success_response.json"),
+        ),
+    )
+
+    async with ClientSession() as session:
+        client = NetlinkClient(
+            host="192.168.1.100",
+            token="test-token",
+            session=session,
+        )
+        client._rest._session = session
+        client._ws._connected = False
+
+        result = await client.set_desk_beep(state="off")
         assert result["status"] == "ok"
 
 

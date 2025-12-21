@@ -314,19 +314,34 @@ class NetlinkClient:
             return await self._ws.send_command("command.desk.calibrate")
         return await self._rest.calibrate_desk()
 
-    async def beep_desk(self, count: int = 1) -> dict[str, Any]:
-        """Trigger desk beep.
+    async def set_desk_beep(
+        self,
+        *,
+        state: str | bool,
+        transport: str = "auto",
+    ) -> dict[str, Any]:
+        """Enable or disable desk beep.
 
         Args:
         ----
-            count: Number of beeps (1-5)
+            state: "on" or "off" (bools are also accepted)
+            transport: Transport method - "auto", "websocket", or "rest"
 
         Returns:
         -------
             Confirmation response
 
         """
-        return await self._rest.beep_desk(count)
+        if transport == "auto":
+            if self._ws.connected:
+                return await self._ws.send_command(
+                    "command.desk.beep",
+                    {"state": state},
+                )
+            return await self._rest.set_desk_beep(state=state)
+        if transport == "websocket":
+            return await self._ws.send_command("command.desk.beep", {"state": state})
+        return await self._rest.set_desk_beep(state=state)
 
     # Monitor control methods (delegate to REST)
     async def get_monitors(self) -> list[MonitorSummary]:

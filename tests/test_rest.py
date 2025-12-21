@@ -156,8 +156,8 @@ async def test_desk_calibrate(aresponses: ResponsesMockServer) -> None:
         await rest.calibrate_desk()
 
 
-async def test_desk_beep(aresponses: ResponsesMockServer) -> None:
-    """Test POST /api/v1/desk/beep."""
+async def test_desk_beep_state(aresponses: ResponsesMockServer) -> None:
+    """Test POST /api/v1/desk/beep with state."""
     aresponses.add(
         "192.168.1.100",
         "/api/v1/desk/beep",
@@ -172,18 +172,34 @@ async def test_desk_beep(aresponses: ResponsesMockServer) -> None:
     async with ClientSession() as session:
         rest = NetlinkREST(host="192.168.1.100", token="test-token")
         rest._session = session
-        await rest.beep_desk(count=3)
+        await rest.set_desk_beep(state="on")
 
 
-async def test_desk_beep_invalid_range() -> None:
-    """Test beep_desk validation."""
+async def test_desk_beep_state_bool(aresponses: ResponsesMockServer) -> None:
+    """Test POST /api/v1/desk/beep with bool state."""
+    aresponses.add(
+        "192.168.1.100",
+        "/api/v1/desk/beep",
+        METH_POST,
+        aresponses.Response(
+            status=200,
+            headers={"Content-Type": "application/json"},
+            text=load_fixtures("success_response.json"),
+        ),
+    )
+
+    async with ClientSession() as session:
+        rest = NetlinkREST(host="192.168.1.100", token="test-token")
+        rest._session = session
+        await rest.set_desk_beep(state=False)
+
+
+async def test_desk_beep_state_invalid() -> None:
+    """Test set_desk_beep validation."""
     rest = NetlinkREST(host="192.168.1.100", token="test-token")
 
-    with pytest.raises(ValueError, match="Beep count must be between"):
-        await rest.beep_desk(count=0)
-
-    with pytest.raises(ValueError, match="Beep count must be between"):
-        await rest.beep_desk(count=6)
+    with pytest.raises(ValueError, match="Beep state must be"):
+        await rest.set_desk_beep(state="maybe")
 
 
 async def test_monitors_list(aresponses: ResponsesMockServer) -> None:
