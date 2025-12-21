@@ -190,12 +190,12 @@ class NetlinkREST:
         """
         return await self._request("desk/calibrate", method=METH_POST)
 
-    async def beep_desk(self, count: int = 1) -> dict[str, Any]:
-        """Trigger desk beep.
+    async def set_desk_beep(self, *, state: str | bool) -> dict[str, Any]:
+        """Enable or disable desk beep.
 
         Args:
         ----
-            count: Number of beeps (1-5)
+            state: "on" or "off" (bools are also accepted)
 
         Returns:
         -------
@@ -203,14 +203,16 @@ class NetlinkREST:
 
         Raises:
         ------
-            ValueError: Beep count out of range
+            ValueError: Invalid state
 
         """
-        if not 1 <= count <= 5:
-            msg = f"Beep count must be between 1 and 5, got {count}"
+        if isinstance(state, bool):
+            state = "on" if state else "off"
+        if state not in {"on", "off"}:
+            msg = f"Beep state must be 'on' or 'off', got {state}"
             raise ValueError(msg)
 
-        return await self._request("desk/beep", method=METH_POST, json={"count": count})
+        return await self._request("desk/beep", method=METH_POST, json={"state": state})
 
     # Monitor endpoints
     async def get_monitors(self) -> list[MonitorSummary]:
