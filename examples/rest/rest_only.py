@@ -22,7 +22,7 @@ async def main() -> None:
             f"height={desk_status.height}cm",
             f"mode={desk_status.mode}",
             f"moving={desk_status.moving}",
-            f"controller={desk_status.controller_connected}",
+            f"beep={desk_status.beep}",
         )
 
         print(f"Setting desk height to {TARGET_HEIGHT}cm")

@@ -32,7 +32,6 @@ def test_desk_state_from_dict(snapshot: SnapshotAssertion) -> None:
     assert desk_state.target is None
     assert desk_state.capabilities is not None
     assert desk_state.inventory is not None
-    assert desk_state.controller_connected is None
 
     # Snapshot test for serialization
     assert desk_state.to_dict() == snapshot
@@ -79,7 +78,6 @@ def test_desk_status_from_dict(snapshot: SnapshotAssertion) -> None:
     assert desk_status.beep == "on"
     assert desk_status.capabilities is not None
     assert desk_status.inventory is not None
-    assert desk_status.controller_connected is True
 
     # Snapshot test
     assert desk_status.to_dict() == snapshot
@@ -233,7 +231,6 @@ def test_desk_state_optional_fields(snapshot: SnapshotAssertion) -> None:
     assert desk_state.target is None
     assert desk_state.capabilities is None
     assert desk_state.inventory is None
-    assert desk_state.controller_connected is None
 
 
 def test_monitor_state_optional_fields() -> None:

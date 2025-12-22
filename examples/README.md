@@ -231,7 +231,6 @@ async def get_desk_info() -> None:
         print(f"  Mode: {status.mode}")
         print(f"  Moving: {status.moving}")
         print(f"  Error: {status.error or 'None'}")
-        print(f"  Controller connected: {status.controller_connected}")
 ```
 
 ### Set Desk Height

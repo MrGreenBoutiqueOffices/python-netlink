@@ -51,13 +51,13 @@ async def main() -> None:
 
         print("\nFetching desk status via REST API...")
         desk_status = await client.get_desk_status()
-        print(f"Controller connected: {desk_status.controller_connected}")
+        print(f"Desk height: {desk_status.height} cm")
 
         print("\nFetching device info via REST API...")
         device_info = await client.get_device_info()
         print(f"Device ID: {device_info.device_id}")
 
-        print("\nSetting desk height to 110cm...")
+        print("\nSetting desk height to 110 cm...")
         response = await client.set_desk_height(110.0)
         print(f"Response: {response}")
 
