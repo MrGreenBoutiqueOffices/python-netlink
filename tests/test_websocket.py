@@ -319,6 +319,40 @@ async def test_websocket_connect_registers_existing_callbacks() -> None:
     assert received == [91.0]
 
 
+async def test_websocket_wrapper_accepts_no_payload() -> None:
+    """Test wrapper handles events without payload."""
+    ws = NetlinkWebSocket(host="192.168.1.100", token="test-token")
+
+    seen: list[dict] = []
+
+    @ws.on("connect")
+    def on_connect(data: dict) -> None:
+        seen.append(data)
+
+    with patch.object(socketio, "AsyncClient") as mock_client_class:
+        mock_sio = MagicMock()
+        mock_client_class.return_value = mock_sio
+        mock_sio.connect = AsyncMock()
+
+        registered_wrappers = {}
+
+        def mock_on(event: str) -> Any:
+            def decorator(wrapper: Any) -> Any:
+                registered_wrappers[event] = wrapper
+                return wrapper
+
+            return decorator
+
+        mock_sio.on = mock_on
+
+        await ws.connect()
+
+        assert "connect" in registered_wrappers
+        await registered_wrappers["connect"]()
+
+    assert seen == [{}]
+
+
 async def test_websocket_connect_registers_async_callback_without_dict() -> None:
     """Test wrapper handles non-dict payload for async callback."""
     ws = NetlinkWebSocket(host="192.168.1.100", token="test-token")
