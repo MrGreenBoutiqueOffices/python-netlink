@@ -99,19 +99,7 @@ class NetlinkWebSocket:
             # Register any callbacks that were added before connect()
             for event, callbacks in self._callbacks.items():
                 for callback in callbacks:
-                    # Create wrapper for each callback
-                    async def wrapper(raw_data: Any, cb: Callable = callback) -> None:
-                        data = (
-                            raw_data.get("data", raw_data)
-                            if isinstance(raw_data, dict)
-                            else raw_data
-                        )
-                        if asyncio.iscoroutinefunction(cb):
-                            await cb(data)
-                        else:
-                            cb(data)
-
-                    self._sio.on(event)(wrapper)
+                    self._sio.on(event)(self._wrap_callback(callback))
 
         try:
             async with asyncio.timeout(DEFAULT_CONNECT_TIMEOUT):
@@ -174,19 +162,6 @@ class NetlinkWebSocket:
         """
 
         def decorator(callback: Callable) -> Callable:
-            # Create wrapper that extracts nested data
-            async def wrapper(raw_data: Any) -> None:
-                # Extract actual data from nested structure if present
-                data = (
-                    raw_data.get("data", raw_data)
-                    if isinstance(raw_data, dict)
-                    else raw_data
-                )
-                if asyncio.iscoroutinefunction(callback):
-                    await callback(data)
-                else:
-                    callback(data)
-
             # Store original callback in our registry
             if event not in self._callbacks:
                 self._callbacks[event] = []
@@ -194,11 +169,33 @@ class NetlinkWebSocket:
 
             # Register wrapper with Socket.IO
             if self._sio:
-                self._sio.on(event)(wrapper)
+                self._sio.on(event)(self._wrap_callback(callback))
 
             return callback
 
         return decorator
+
+    def _wrap_callback(self, callback: Callable) -> Callable:
+        """Wrap a callback to normalize Socket.IO event payloads."""
+
+        async def wrapper(*args: Any) -> None:
+            if len(args) > 1:
+                _LOGGER.debug(
+                    "Socket.IO event passed %d args; using first payload.",
+                    len(args),
+                )
+            raw_data = args[0] if args else {}
+            data = (
+                raw_data.get("data", raw_data)
+                if isinstance(raw_data, dict)
+                else raw_data
+            )
+            if asyncio.iscoroutinefunction(callback):
+                await callback(data)
+            else:
+                callback(data)
+
+        return wrapper
 
     async def emit_to_callbacks(self, event: str, data: Any) -> None:
         """Emit event to registered callbacks.
