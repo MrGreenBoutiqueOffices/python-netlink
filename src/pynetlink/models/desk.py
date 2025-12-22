@@ -24,6 +24,7 @@ class DeskState(DataClassDictMixin):
         beep: Beep setting ("on" or "off", may be present in some events)
         capabilities: Desk capabilities (optional)
         inventory: Desk inventory info (optional)
+        controller_connected: Whether the desk controller is connected
 
     """
 
@@ -35,6 +36,7 @@ class DeskState(DataClassDictMixin):
     beep: str | None = None
     capabilities: dict[str, Any] | None = None
     inventory: dict[str, Any] | None = None
+    controller_connected: bool | None = None
 
     def __post_init__(self) -> None:
         """Validate height range."""
@@ -55,6 +57,10 @@ class DeskStatus(DataClassDictMixin):
         mode: Current operation mode
         moving: Whether desk is currently moving
         error: Error message if any
+        target: Target height if a move is in progress
+        beep: Beep setting ("on" or "off", if available)
+        capabilities: Desk capabilities (optional)
+        inventory: Desk inventory info (optional)
         controller_connected: Whether desk controller is connected
 
     """
@@ -63,4 +69,8 @@ class DeskStatus(DataClassDictMixin):
     mode: str
     moving: bool
     error: str | None = None
+    target: float | None = None
+    beep: str | None = None
+    capabilities: dict[str, Any] | None = None
+    inventory: dict[str, Any] | None = None
     controller_connected: bool | None = None

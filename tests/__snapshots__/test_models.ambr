@@ -12,6 +12,7 @@
       'max_height': 127.0,
       'min_height': 62.0,
     }),
+    'controller_connected': None,
     'error': None,
     'height': 75.0,
     'inventory': dict({
@@ -28,6 +29,7 @@
   dict({
     'beep': None,
     'capabilities': None,
+    'controller_connected': None,
     'error': None,
     'height': 75.0,
     'inventory': None,
@@ -40,6 +42,7 @@
   dict({
     'beep': None,
     'capabilities': None,
+    'controller_connected': None,
     'error': None,
     'height': 75.0,
     'inventory': None,
@@ -50,11 +53,27 @@
 # ---
 # name: test_desk_status_from_dict
   dict({
+    'beep': 'on',
+    'capabilities': dict({
+      'supports': dict({
+        'beep': True,
+        'height': True,
+        'stop': True,
+      }),
+    }),
     'controller_connected': True,
     'error': None,
     'height': 95.0,
+    'inventory': dict({
+      'controllers': list([
+        dict({
+          'type': 'desk',
+        }),
+      ]),
+    }),
     'mode': 'stopped',
     'moving': False,
+    'target': 110.0,
   })
 # ---
 # name: test_monitor_state_from_dict

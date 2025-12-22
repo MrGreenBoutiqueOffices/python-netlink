@@ -3,5 +3,21 @@
   "mode": "stopped",
   "moving": false,
   "error": null,
+  "target": 110.0,
+  "beep": "on",
+  "capabilities": {
+    "supports": {
+      "height": true,
+      "stop": true,
+      "beep": true
+    }
+  },
+  "inventory": {
+    "controllers": [
+      {
+        "type": "desk"
+      }
+    ]
+  },
   "controller_connected": true
 }
