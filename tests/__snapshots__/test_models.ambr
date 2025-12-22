@@ -12,7 +12,6 @@
       'max_height': 127.0,
       'min_height': 62.0,
     }),
-    'controller_connected': None,
     'error': None,
     'height': 75.0,
     'inventory': dict({
@@ -29,7 +28,6 @@
   dict({
     'beep': None,
     'capabilities': None,
-    'controller_connected': None,
     'error': None,
     'height': 75.0,
     'inventory': None,
@@ -42,7 +40,6 @@
   dict({
     'beep': None,
     'capabilities': None,
-    'controller_connected': None,
     'error': None,
     'height': 75.0,
     'inventory': None,
@@ -61,7 +58,6 @@
         'stop': True,
       }),
     }),
-    'controller_connected': True,
     'error': None,
     'height': 95.0,
     'inventory': dict({

@@ -64,7 +64,6 @@ async def test_desk_get_status(aresponses: ResponsesMockServer) -> None:
         assert status.height == 95.0
         assert status.mode == "stopped"
         assert status.moving is False
-        assert status.controller_connected is True
 
 
 async def test_desk_set_height(aresponses: ResponsesMockServer) -> None:
