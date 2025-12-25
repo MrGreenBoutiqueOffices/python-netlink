@@ -3,15 +3,5 @@
   "mode": "idle",
   "moving": false,
   "error": null,
-  "target": null,
-  "capabilities": {
-    "min_height": 62.0,
-    "max_height": 127.0,
-    "has_presets": true
-  },
-  "inventory": {
-    "manufacturer": "Linak",
-    "model": "DPG1C",
-    "serial": "12345"
-  }
+  "target": null
 }

@@ -90,20 +90,20 @@ async def test_client_desk_state_property() -> None:
     assert client.desk_state.height == 75.0
 
 
-async def test_client_monitors_property() -> None:
-    """Test monitors property returns cached monitor states."""
+async def test_client_displays_property() -> None:
+    """Test displays property returns cached display states."""
     client = NetlinkClient(host="192.168.1.100", token="test-token")
 
     # Initially empty
-    assert len(client.monitors) == 0
+    assert len(client.displays) == 0
 
-    monitor_data = load_fixtures("monitor_state.json")
-    await client._on_monitor_state(monitor_data)
+    display_data = load_fixtures("display_state.json")
+    await client._on_display_state(display_data)
 
     # Should return cached state
-    assert len(client.monitors) == 1
-    assert "20" in client.monitors
-    assert client.monitors["20"].brightness == 72
+    assert len(client.displays) == 1
+    assert "20" in client.displays
+    assert client.displays["20"].state.brightness == 72
 
 
 async def test_client_device_info_property() -> None:
@@ -142,21 +142,26 @@ async def test_client_on_desk_state_nested_data() -> None:
     assert client.desk_state.mode == "moving_up"
 
 
-async def test_client_on_monitor_state_uses_string_key() -> None:
-    """Test _on_monitor_state uses string bus_id as key."""
+async def test_client_on_display_state_uses_string_key() -> None:
+    """Test _on_display_state uses string bus_id as key."""
     client = NetlinkClient(host="192.168.1.100", token="test-token")
 
-    monitor_data = {
+    display_data = {
         "bus": 20,
-        "power": "on",
-        "brightness": 50,
+        "model": "Test Display",
+        "type": "display",
+        "supports": {"power": True},
+        "state": {
+            "power": "on",
+            "brightness": 50,
+        },
     }
 
-    await client._on_monitor_state(monitor_data)
+    await client._on_display_state(display_data)
 
     # Should use string key "20"
-    assert "20" in client.monitors
-    assert client.monitors["20"].bus == 20
+    assert "20" in client.displays
+    assert client.displays["20"].bus == 20
 
 
 async def test_client_on_device_info_nested_data() -> None:
@@ -226,8 +231,8 @@ async def test_client_get_desk_status(aresponses: ResponsesMockServer) -> None:
         )
         client._rest._session = session
 
-        status = await client.get_desk_status()
-        assert status.height == 95.0
+        desk = await client.get_desk_status()
+        assert desk.state.height == 95.0
 
 
 async def test_client_set_desk_height(aresponses: ResponsesMockServer) -> None:
@@ -482,16 +487,16 @@ async def test_client_calibrate_desk_rest_transport(
         await client.calibrate_desk(transport="rest")
 
 
-async def test_client_get_monitors(aresponses: ResponsesMockServer) -> None:
-    """Test get_monitors delegates to REST."""
+async def test_client_get_displays(aresponses: ResponsesMockServer) -> None:
+    """Test get_displays delegates to REST."""
     aresponses.add(
         "192.168.1.100",
-        "/api/v1/monitors",
+        "/api/v1/displays",
         METH_GET,
         aresponses.Response(
             status=200,
             headers={"Content-Type": "application/json"},
-            text=load_fixtures("monitors_list_response.json"),
+            text=load_fixtures("displays_list_response.json"),
         ),
     )
 
@@ -503,20 +508,20 @@ async def test_client_get_monitors(aresponses: ResponsesMockServer) -> None:
         )
         client._rest._session = session
 
-        monitors = await client.get_monitors()
-        assert len(monitors) == 1
+        displays = await client.get_displays()
+        assert len(displays) == 1
 
 
-async def test_client_get_monitor_status(aresponses: ResponsesMockServer) -> None:
-    """Test get_monitor_status delegates to REST."""
+async def test_client_get_display_status(aresponses: ResponsesMockServer) -> None:
+    """Test get_display_status delegates to REST."""
     aresponses.add(
         "192.168.1.100",
-        "/api/v1/monitor/20/status",
+        "/api/v1/display/20/status",
         METH_GET,
         aresponses.Response(
             status=200,
             headers={"Content-Type": "application/json"},
-            text=load_fixtures("monitor_state.json"),
+            text=load_fixtures("display_state.json"),
         ),
     )
 
@@ -528,15 +533,15 @@ async def test_client_get_monitor_status(aresponses: ResponsesMockServer) -> Non
         )
         client._rest._session = session
 
-        status = await client.get_monitor_status(bus_id=20)
-        assert status.brightness == 72
+        status = await client.get_display_status(bus_id=20)
+        assert status.state.brightness == 72
 
 
-async def test_client_set_monitor_power(aresponses: ResponsesMockServer) -> None:
-    """Test set_monitor_power delegates to REST."""
+async def test_client_set_display_power(aresponses: ResponsesMockServer) -> None:
+    """Test set_display_power delegates to REST."""
     aresponses.add(
         "192.168.1.100",
-        "/api/v1/monitor/20/power",
+        "/api/v1/display/20/power",
         METH_PUT,
         aresponses.Response(
             status=200,
@@ -553,11 +558,11 @@ async def test_client_set_monitor_power(aresponses: ResponsesMockServer) -> None
         )
         client._rest._session = session
 
-        await client.set_monitor_power(bus_id=20, state="on")
+        await client.set_display_power(bus_id=20, state="on")
 
 
-async def test_client_set_monitor_power_auto_websocket() -> None:
-    """Test set_monitor_power auto transport uses WebSocket when connected."""
+async def test_client_set_display_power_auto_websocket() -> None:
+    """Test set_display_power auto transport uses WebSocket when connected."""
     client = NetlinkClient(host="192.168.1.100", token="test-token")
     client._ws._connected = True
 
@@ -567,20 +572,20 @@ async def test_client_set_monitor_power_auto_websocket() -> None:
         new_callable=AsyncMock,
         return_value={"status": "ok"},
     ) as mock_send:
-        await client.set_monitor_power(bus_id=1, state="off")
+        await client.set_display_power(bus_id=1, state="off")
         mock_send.assert_called_once_with(
-            "command.monitor.power",
+            "command.display.power",
             {"bus": "1", "state": "off"},
         )
 
 
-async def test_client_set_monitor_power_rest_transport(
+async def test_client_set_display_power_rest_transport(
     aresponses: ResponsesMockServer,
 ) -> None:
-    """Test set_monitor_power with explicit REST transport."""
+    """Test set_display_power with explicit REST transport."""
     aresponses.add(
         "192.168.1.100",
-        "/api/v1/monitor/20/power",
+        "/api/v1/display/20/power",
         METH_PUT,
         aresponses.Response(
             status=200,
@@ -598,14 +603,14 @@ async def test_client_set_monitor_power_rest_transport(
         client._rest._session = session
         client._ws._connected = True
 
-        await client.set_monitor_power(bus_id=20, state="on", transport="rest")
+        await client.set_display_power(bus_id=20, state="on", transport="rest")
 
 
-async def test_client_set_monitor_brightness(aresponses: ResponsesMockServer) -> None:
-    """Test set_monitor_brightness delegates to REST."""
+async def test_client_set_display_brightness(aresponses: ResponsesMockServer) -> None:
+    """Test set_display_brightness delegates to REST."""
     aresponses.add(
         "192.168.1.100",
-        "/api/v1/monitor/20/brightness",
+        "/api/v1/display/20/brightness",
         METH_PUT,
         aresponses.Response(
             status=200,
@@ -622,11 +627,11 @@ async def test_client_set_monitor_brightness(aresponses: ResponsesMockServer) ->
         )
         client._rest._session = session
 
-        await client.set_monitor_brightness(bus_id=20, brightness=80)
+        await client.set_display_brightness(bus_id=20, brightness=80)
 
 
-async def test_client_set_monitor_brightness_websocket_transport() -> None:
-    """Test set_monitor_brightness with explicit WebSocket transport."""
+async def test_client_set_display_brightness_websocket_transport() -> None:
+    """Test set_display_brightness with explicit WebSocket transport."""
     client = NetlinkClient(host="192.168.1.100", token="test-token")
     client._ws._connected = True
 
@@ -636,24 +641,24 @@ async def test_client_set_monitor_brightness_websocket_transport() -> None:
         new_callable=AsyncMock,
         return_value={"status": "ok"},
     ) as mock_send:
-        await client.set_monitor_brightness(
+        await client.set_display_brightness(
             bus_id=2,
             brightness=70,
             transport="websocket",
         )
         mock_send.assert_called_once_with(
-            "command.monitor.brightness",
+            "command.display.brightness",
             {"bus": "2", "brightness": 70},
         )
 
 
-async def test_client_set_monitor_brightness_rest_transport(
+async def test_client_set_display_brightness_rest_transport(
     aresponses: ResponsesMockServer,
 ) -> None:
-    """Test set_monitor_brightness with explicit REST transport."""
+    """Test set_display_brightness with explicit REST transport."""
     aresponses.add(
         "192.168.1.100",
-        "/api/v1/monitor/20/brightness",
+        "/api/v1/display/20/brightness",
         METH_PUT,
         aresponses.Response(
             status=200,
@@ -671,18 +676,18 @@ async def test_client_set_monitor_brightness_rest_transport(
         client._rest._session = session
         client._ws._connected = True
 
-        await client.set_monitor_brightness(
+        await client.set_display_brightness(
             bus_id=20,
             brightness=80,
             transport="rest",
         )
 
 
-async def test_client_set_monitor_volume(aresponses: ResponsesMockServer) -> None:
-    """Test set_monitor_volume delegates to REST."""
+async def test_client_set_display_volume(aresponses: ResponsesMockServer) -> None:
+    """Test set_display_volume delegates to REST."""
     aresponses.add(
         "192.168.1.100",
-        "/api/v1/monitor/20/volume",
+        "/api/v1/display/20/volume",
         METH_PUT,
         aresponses.Response(
             status=200,
@@ -699,11 +704,11 @@ async def test_client_set_monitor_volume(aresponses: ResponsesMockServer) -> Non
         )
         client._rest._session = session
 
-        await client.set_monitor_volume(bus_id=20, volume=50)
+        await client.set_display_volume(bus_id=20, volume=50)
 
 
-async def test_client_set_monitor_volume_auto_websocket() -> None:
-    """Test set_monitor_volume auto transport uses WebSocket when connected."""
+async def test_client_set_display_volume_auto_websocket() -> None:
+    """Test set_display_volume auto transport uses WebSocket when connected."""
     client = NetlinkClient(host="192.168.1.100", token="test-token")
     client._ws._connected = True
 
@@ -713,20 +718,20 @@ async def test_client_set_monitor_volume_auto_websocket() -> None:
         new_callable=AsyncMock,
         return_value={"status": "ok"},
     ) as mock_send:
-        await client.set_monitor_volume(bus_id=3, volume=30)
+        await client.set_display_volume(bus_id=3, volume=30)
         mock_send.assert_called_once_with(
-            "command.monitor.volume",
+            "command.display.volume",
             {"bus": "3", "volume": 30},
         )
 
 
-async def test_client_set_monitor_volume_rest_transport(
+async def test_client_set_display_volume_rest_transport(
     aresponses: ResponsesMockServer,
 ) -> None:
-    """Test set_monitor_volume with explicit REST transport."""
+    """Test set_display_volume with explicit REST transport."""
     aresponses.add(
         "192.168.1.100",
-        "/api/v1/monitor/20/volume",
+        "/api/v1/display/20/volume",
         METH_PUT,
         aresponses.Response(
             status=200,
@@ -744,11 +749,11 @@ async def test_client_set_monitor_volume_rest_transport(
         client._rest._session = session
         client._ws._connected = True
 
-        await client.set_monitor_volume(bus_id=20, volume=50, transport="rest")
+        await client.set_display_volume(bus_id=20, volume=50, transport="rest")
 
 
-async def test_client_set_monitor_volume_websocket() -> None:
-    """Test set_monitor_volume with WebSocket transport."""
+async def test_client_set_display_volume_websocket() -> None:
+    """Test set_display_volume with WebSocket transport."""
     client = NetlinkClient(host="192.168.1.100", token="test-token")
     client._ws._connected = True
 
@@ -758,22 +763,22 @@ async def test_client_set_monitor_volume_websocket() -> None:
         new_callable=AsyncMock,
         return_value={"status": "ok"},
     ) as mock_send:
-        await client.set_monitor_volume(
+        await client.set_display_volume(
             bus_id=1,
             volume=40,
             transport="websocket",
         )
         mock_send.assert_called_once_with(
-            "command.monitor.volume",
+            "command.display.volume",
             {"bus": "1", "volume": 40},
         )
 
 
-async def test_client_set_monitor_source(aresponses: ResponsesMockServer) -> None:
-    """Test set_monitor_source delegates to REST."""
+async def test_client_set_display_source(aresponses: ResponsesMockServer) -> None:
+    """Test set_display_source delegates to REST."""
     aresponses.add(
         "192.168.1.100",
-        "/api/v1/monitor/20/source",
+        "/api/v1/display/20/source",
         METH_PUT,
         aresponses.Response(
             status=200,
@@ -790,11 +795,11 @@ async def test_client_set_monitor_source(aresponses: ResponsesMockServer) -> Non
         )
         client._rest._session = session
 
-        await client.set_monitor_source(bus_id=20, source="HDMI1")
+        await client.set_display_source(bus_id=20, source="HDMI1")
 
 
-async def test_client_set_monitor_source_auto_websocket() -> None:
-    """Test set_monitor_source auto transport uses WebSocket when connected."""
+async def test_client_set_display_source_auto_websocket() -> None:
+    """Test set_display_source auto transport uses WebSocket when connected."""
     client = NetlinkClient(host="192.168.1.100", token="test-token")
     client._ws._connected = True
 
@@ -804,20 +809,20 @@ async def test_client_set_monitor_source_auto_websocket() -> None:
         new_callable=AsyncMock,
         return_value={"status": "ok"},
     ) as mock_send:
-        await client.set_monitor_source(bus_id=4, source="DP")
+        await client.set_display_source(bus_id=4, source="DP")
         mock_send.assert_called_once_with(
-            "command.monitor.source",
+            "command.display.source",
             {"bus": "4", "source": "DP"},
         )
 
 
-async def test_client_set_monitor_source_rest_transport(
+async def test_client_set_display_source_rest_transport(
     aresponses: ResponsesMockServer,
 ) -> None:
-    """Test set_monitor_source with explicit REST transport."""
+    """Test set_display_source with explicit REST transport."""
     aresponses.add(
         "192.168.1.100",
-        "/api/v1/monitor/20/source",
+        "/api/v1/display/20/source",
         METH_PUT,
         aresponses.Response(
             status=200,
@@ -835,7 +840,7 @@ async def test_client_set_monitor_source_rest_transport(
         client._rest._session = session
         client._ws._connected = True
 
-        await client.set_monitor_source(bus_id=20, source="HDMI1", transport="rest")
+        await client.set_display_source(bus_id=20, source="HDMI1", transport="rest")
 
 
 async def test_client_get_browser_url(aresponses: ResponsesMockServer) -> None:
@@ -1277,8 +1282,8 @@ async def test_client_stop_desk_websocket() -> None:
         mock_send.assert_called_once_with("command.desk.stop")
 
 
-async def test_client_set_monitor_power_websocket() -> None:
-    """Test set_monitor_power with WebSocket transport."""
+async def test_client_set_display_power_websocket() -> None:
+    """Test set_display_power with WebSocket transport."""
     client = NetlinkClient(host="192.168.1.100", token="test-token")
     client._ws._connected = True
 
@@ -1288,15 +1293,15 @@ async def test_client_set_monitor_power_websocket() -> None:
         new_callable=AsyncMock,
         return_value={"status": "ok"},
     ) as mock_send:
-        await client.set_monitor_power(bus_id=0, state="on", transport="websocket")
+        await client.set_display_power(bus_id=0, state="on", transport="websocket")
         mock_send.assert_called_once_with(
-            "command.monitor.power",
+            "command.display.power",
             {"bus": "0", "state": "on"},
         )
 
 
-async def test_client_set_monitor_brightness_auto() -> None:
-    """Test set_monitor_brightness with auto transport."""
+async def test_client_set_display_brightness_auto() -> None:
+    """Test set_display_brightness with auto transport."""
     client = NetlinkClient(host="192.168.1.100", token="test-token")
     client._ws._connected = True
 
@@ -1306,15 +1311,15 @@ async def test_client_set_monitor_brightness_auto() -> None:
         new_callable=AsyncMock,
         return_value={"status": "ok"},
     ) as mock_send:
-        await client.set_monitor_brightness(bus_id=0, brightness=80)
+        await client.set_display_brightness(bus_id=0, brightness=80)
         mock_send.assert_called_once_with(
-            "command.monitor.brightness",
+            "command.display.brightness",
             {"bus": "0", "brightness": 80},
         )
 
 
-async def test_client_set_monitor_source_websocket() -> None:
-    """Test set_monitor_source with WebSocket transport."""
+async def test_client_set_display_source_websocket() -> None:
+    """Test set_display_source with WebSocket transport."""
     client = NetlinkClient(host="192.168.1.100", token="test-token")
     client._ws._connected = True
 
@@ -1324,13 +1329,13 @@ async def test_client_set_monitor_source_websocket() -> None:
         new_callable=AsyncMock,
         return_value={"status": "ok"},
     ) as mock_send:
-        await client.set_monitor_source(
+        await client.set_display_source(
             bus_id=2,
             source="USBC",
             transport="websocket",
         )
         mock_send.assert_called_once_with(
-            "command.monitor.source",
+            "command.display.source",
             {"bus": "2", "source": "USBC"},
         )
 

@@ -23,7 +23,7 @@ class NetlinkDevice:
         version: Software version
         api_version: API version
         has_desk: Whether device has desk control
-        monitors: List of connected monitor bus IDs
+        displays: List of connected display bus IDs
         ws_path: WebSocket path
 
     """
@@ -36,7 +36,7 @@ class NetlinkDevice:
     version: str
     api_version: str
     has_desk: bool
-    monitors: list[str]
+    displays: list[str]
     ws_path: str
 
     @classmethod
@@ -74,9 +74,9 @@ class NetlinkDevice:
             version=properties.get("version", ""),
             api_version=properties.get("api_version", "v1"),
             has_desk=properties.get("has_desk", "false") == "true",
-            monitors=(
-                properties.get("monitors", "").split(",")
-                if properties.get("monitors")
+            displays=(
+                properties.get("displays", "").split(",")
+                if properties.get("displays")
                 else []
             ),
             ws_path=properties.get("ws_path", "/socket.io"),

@@ -11,8 +11,8 @@ MAX_RECONNECT_DELAY = 60.0
 
 # WebSocket events
 EVENT_DESK_STATE = "desk.state"
-EVENT_MONITOR_STATE = "monitor.state"
-EVENT_MONITORS_LIST = "monitors.list"
+EVENT_DISPLAY_STATE = "display.state"
+EVENT_DISPLAYS_LIST = "displays.list"
 EVENT_BROWSER_STATE = "browser.state"
 EVENT_DEVICE_INFO = "device.info"
 EVENT_SYSTEM_MQTT = "system.mqtt"
