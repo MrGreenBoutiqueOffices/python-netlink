@@ -134,8 +134,11 @@ class NetlinkClient:
         """Update internal desk state from WebSocket."""
         # Ensure payload is parsed (fixtures may supply JSON strings)
         payload = json.loads(data) if isinstance(data, str) else data
-        # Extract actual state data from nested structure
-        state_data = payload.get("data", payload)
+        # Extract actual state data from envelope
+        envelope_data = payload.get("data", payload)
+        # Extract nested state from {capabilities, inventory, state: {...}}
+        # Fallback to flat structure for backward compatibility
+        state_data = envelope_data.get("state", envelope_data)
         self._desk_state = DeskState.from_dict(state_data)
 
     async def _on_display_state(self, data: str | dict[str, Any]) -> None:

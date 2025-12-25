@@ -9,7 +9,7 @@ Complete usage examples for the `pynetlink` library.
 - [Device Discovery](#device-discovery)
 - [Real-time Events](#real-time-events)
 - [Desk Control](#desk-control)
-- [Monitor Control](#monitor-control)
+- [Display Control](#display-control)
 - [Browser Control](#browser-control)
 - [Error Handling](#error-handling)
 - [Advanced Usage](#advanced-usage)
@@ -27,13 +27,13 @@ Comprehensive quickstart demonstrating WebSocket + REST flow.
 Device discovery example using mDNS/Zeroconf.
 
 ### [`realtime/desk_state_listener.py`](./realtime/desk_state_listener.py)
-Focused real-time desk monitoring example.
+Focused real-time desk displaying example.
 
-### [`realtime/monitor_state_listener.py`](./realtime/monitor_state_listener.py)
-Real-time monitor state listener per bus.
+### [`realtime/display_state_listener.py`](./realtime/display_state_listener.py)
+Real-time display state listener per bus.
 
 ### [`rest/rest_only.py`](./rest/rest_only.py)
-REST-only desk and monitor control.
+REST-only desk and display control.
 
 ### [`rest/browser_control.py`](./rest/browser_control.py)
 Browser control endpoints via REST.
@@ -62,11 +62,11 @@ async def main() -> None:
         await client.set_desk_height(120.0)
         print("Desk moving to 120cm...")
 
-        # Control monitor
-        monitors = await client.get_monitors()
-        if monitors:
-            await client.set_monitor_brightness(monitors[0].bus, 80)
-            print("Monitor brightness set to 80%")
+        # Control display
+        displays = await client.get_displays()
+        if displays:
+            await client.set_display_brightness(displays[0].bus, 80)
+            print("Display brightness set to 80%")
 
 if __name__ == "__main__":
     asyncio.run(main())
@@ -99,7 +99,7 @@ async def discover() -> None:
         print(f"  Model: {device.model}")
         print(f"  Version: {device.version}")
         print(f"  Has desk: {device.has_desk}")
-        print(f"  Monitors: {', '.join(device.monitors)}")
+        print(f"  Displays: {', '.join(device.displays)}")
 ```
 
 ### Connect to First Discovered Device
@@ -153,17 +153,19 @@ async def listen_all_events() -> None:
                 print(f"  → Target: {data.get('target')}cm")
 
         @client.on(EVENT_MONITOR_STATE)
-        async def on_monitor_state(data: dict) -> None:
-            """Monitor state changed."""
-            print(f"🖥️  Monitor {data['bus']}:")
-            print(f"  Power: {data.get('power')}")
-            print(f"  Brightness: {data.get('brightness')}%")
-            print(f"  Volume: {data.get('volume')}%")
+        async def on_display_state(_raw_data: dict) -> None:
+            """Display state changed - use client.displays for parsed data."""
+            for bus_id, display in client.displays.items():
+                print(f"🖥️  Display {bus_id} ({display.model}):")
+                print(f"  Power: {display.state.power}")
+                print(f"  Brightness: {display.state.brightness}%")
+                print(f"  Volume: {display.state.volume}%")
+                print(f"  Source: {display.state.source}")
 
-        @client.on("monitors.list")
-        async def on_monitors_list(data: list) -> None:
-            """Monitor list updated."""
-            print(f"📋 Monitors: {len(data)} connected")
+        @client.on("displays.list")
+        async def on_displays_list(data: list) -> None:
+            """Display list updated."""
+            print(f"📋 Displays: {len(data)} connected")
 
         @client.on(EVENT_DEVICE_INFO)
         async def on_device_info(data: dict) -> None:
@@ -201,12 +203,15 @@ async def use_cached_state() -> None:
             print(f"  Model: {client.device_info.model}")
             print(f"  Version: {client.device_info.version}")
 
-        # Access cached monitor states
-        for bus_id, monitor in client.monitors.items():
-            print(f"\nMonitor {bus_id}:")
-            print(f"  Model: {monitor.model}")
-            print(f"  Power: {monitor.power}")
-            print(f"  Brightness: {monitor.brightness}%")
+        # Access cached display states
+        for bus_id, display in client.displays.items():
+            print(f"\nDisplay {bus_id}:")
+            print(f"  Model: {display.model}")
+            print(f"  Serial: {display.serial_number}")
+            print(f"  Power: {display.state.power}")
+            print(f"  Source: {display.state.source}")
+            print(f"  Brightness: {display.state.brightness}%")
+            print(f"  Volume: {display.state.volume}%")
 ```
 
 **See**: [`quickstart/basic_usage.py`](./quickstart/basic_usage.py) for event handling example.
@@ -224,13 +229,13 @@ async def get_desk_info() -> None:
     """Get full desk status."""
     async with NetlinkClient(host, token) as client:
         # Get status via REST API
-        status = await client.get_desk_status()
+        desk = await client.get_desk_status()
 
         print(f"Desk Status:")
-        print(f"  Height: {status.height}cm")
-        print(f"  Mode: {status.mode}")
-        print(f"  Moving: {status.moving}")
-        print(f"  Error: {status.error or 'None'}")
+        print(f"  Height: {desk.state.height}cm")
+        print(f"  Mode: {desk.state.mode}")
+        print(f"  Moving: {desk.state.moving}")
+        print(f"  Error: {desk.state.error or 'None'}")
 ```
 
 ### Set Desk Height
@@ -301,79 +306,79 @@ async def desk_presets() -> None:
 
 ---
 
-## Monitor Control
+## Display Control
 
-Control DDC/CI compatible monitors:
+Control DDC/CI compatible displays:
 
-### List Monitors
+### List Displays
 
 ```python
-async def list_monitors() -> None:
-    """Get list of all connected monitors."""
+async def list_displays() -> None:
+    """Get list of all connected displays."""
     async with NetlinkClient(host, token) as client:
-        monitors = await client.get_monitors()
+        displays = await client.get_displays()
 
-        print(f"Found {len(monitors)} monitor(s):\n")
-        for monitor in monitors:
-            print(f"Monitor {monitor.id}:")
-            print(f"  Bus ID: {monitor.bus}")
-            print(f"  Model: {monitor.model}")
-            print(f"  Type: {monitor.type}")
+        print(f"Found {len(displays)} display(s):\n")
+        for display in displays:
+            print(f"Display {display.id}:")
+            print(f"  Bus ID: {display.bus}")
+            print(f"  Model: {display.model}")
+            print(f"  Type: {display.type}")
 ```
 
-### Get Monitor Status
+### Get Display Status
 
 ```python
-async def monitor_status() -> None:
-    """Get detailed monitor status."""
+async def display_status() -> None:
+    """Get detailed display status."""
     async with NetlinkClient(host, token) as client:
-        status = await client.get_monitor_status(bus_id=0)
+        status = await client.get_display_status(bus_id=0)
 
-        print(f"Monitor Status:")
+        print(f"Display Status:")
         print(f"  Bus: {status.bus}")
         print(f"  Model: {status.model}")
         print(f"  Type: {status.type}")
-        print(f"  Serial: {status.sn}")
-        print(f"  Power: {status.power}")
-        print(f"  Source: {status.source}")
-        print(f"  Brightness: {status.brightness}%")
-        print(f"  Volume: {status.volume}%")
+        print(f"  Serial: {status.serial_number}")
+        print(f"  Power: {status.state.power}")
+        print(f"  Source: {status.state.source}")
+        print(f"  Brightness: {status.state.brightness}%")
+        print(f"  Volume: {status.state.volume}%")
         print(f"  Capabilities: {status.supports}")
         print(f"  Available sources: {status.source_options}")
 ```
 
-### Control Monitor Power
+### Control Display Power
 
 ```python
 async def control_power() -> None:
-    """Turn monitor on/off."""
+    """Turn display on/off."""
     async with NetlinkClient(host, token) as client:
         # Turn on
-        await client.set_monitor_power(bus_id=0, state="on")
-        print("Monitor powered ON")
+        await client.set_display_power(bus_id=0, state="on")
+        print("Display powered ON")
 
         await asyncio.sleep(5)
 
         # Turn off
-        await client.set_monitor_power(bus_id=0, state="off")
-        print("Monitor powered OFF")
+        await client.set_display_power(bus_id=0, state="off")
+        print("Display powered OFF")
 ```
 
 ### Adjust Brightness
 
 ```python
 async def adjust_brightness() -> None:
-    """Adjust monitor brightness."""
+    """Adjust display brightness."""
     async with NetlinkClient(host, token) as client:
         # Set to 100% (max)
-        await client.set_monitor_brightness(bus_id=0, brightness=100)
+        await client.set_display_brightness(bus_id=0, brightness=100)
         print("Brightness: 100%")
 
         await asyncio.sleep(2)
 
         # Gradually dim to 20%
         for level in range(100, 19, -10):
-            await client.set_monitor_brightness(bus_id=0, brightness=level)
+            await client.set_display_brightness(bus_id=0, brightness=level)
             print(f"Brightness: {level}%")
             await asyncio.sleep(0.5)
 ```
@@ -382,20 +387,20 @@ async def adjust_brightness() -> None:
 
 ```python
 async def switch_source() -> None:
-    """Switch monitor input source."""
+    """Switch display input source."""
     async with NetlinkClient(host, token) as client:
         # Get available sources
-        status = await client.get_monitor_status(bus_id=0)
+        status = await client.get_display_status(bus_id=0)
         print(f"Available sources: {status.source_options}")
 
         # Switch to HDMI1
-        await client.set_monitor_source(bus_id=0, source="HDMI1")
+        await client.set_display_source(bus_id=0, source="HDMI1")
         print("Switched to HDMI1")
 
         await asyncio.sleep(2)
 
         # Switch to USB-C
-        await client.set_monitor_source(bus_id=0, source="USBC")
+        await client.set_display_source(bus_id=0, source="USBC")
         print("Switched to USB-C")
 ```
 
@@ -403,14 +408,14 @@ async def switch_source() -> None:
 
 ```python
 async def batch_update() -> None:
-    """Update multiple monitor properties at once."""
+    """Update multiple display properties at once."""
     async with NetlinkClient(host, token) as client:
         # Using individual methods
-        await client.set_monitor_power(0, "on")
-        await client.set_monitor_brightness(0, 80)
-        await client.set_monitor_volume(0, 50)
+        await client.set_display_power(0, "on")
+        await client.set_display_brightness(0, 80)
+        await client.set_display_volume(0, 50)
 
-        print("Monitor configured!")
+        print("Display configured!")
 ```
 
 ---
@@ -513,7 +518,7 @@ async def handle_command_errors() -> None:
 
         try:
             # Try invalid brightness
-            await client.set_monitor_brightness(0, 150)
+            await client.set_display_brightness(0, 150)
         except ValueError as e:
             print(f"❌ Invalid value: {e}")
 ```
@@ -642,22 +647,35 @@ class DeskState:
     inventory: dict | None     # Desk inventory info
 ```
 
-### MonitorState (WebSocket)
+### Display (WebSocket)
 
 ```python
 @dataclass
-class MonitorState:
-    bus: int | str                  # I2C bus ID
-    power: str | None               # "on", "off", "standby"
+class DisplayState:
+    """Current state values (nested in Display)."""
+    power: str | None               # "on", "off"
     source: str | None              # "HDMI1", "USBC", etc.
     brightness: int | None          # 0-100
     volume: int | None              # 0-100
-    model: str | None               # Monitor model
-    type: str | None                # "monitor", "tablet"
-    sn: str | None                  # Serial number
-    supports: dict | None           # Capabilities
-    source_options: list[str] | None  # Available sources
+    error: str | None               # Error message if any
+
+@dataclass
+class Display:
+    """Full display information with capabilities and state."""
+    bus: int | str                   # I2C bus ID
+    model: str                       # Display model
+    type: str                        # "display", "tablet"
+    supports: dict[str, Any]         # Capabilities (e.g., {"power": True, "brightness": True})
+    state: DisplayState              # Nested current state values
+    serial_number: str | None        # Serial number
+    source_options: list[str] | None # Available input sources
 ```
+
+**Breaking Change (v0.2.0)**: Display now has a nested structure:
+- Capabilities are at the top level (`model`, `type`, `supports`, `serial_number`)
+- Runtime values are nested under `state` (`.state.power`, `.state.brightness`, etc.)
+- `sn` renamed to `serial_number`
+- `supports.source` is now a boolean (was list of sources, now in `source_options`)
 
 ### NetlinkDevice (Discovery)
 
@@ -672,7 +690,7 @@ class NetlinkDevice:
     version: str         # Software version
     api_version: str     # API version
     has_desk: bool       # Has desk control
-    monitors: list[str]  # Monitor bus IDs
+    displays: list[str]  # Display bus IDs
     ws_path: str         # WebSocket path
 ```
 
@@ -736,7 +754,7 @@ See [`ROADMAP.md`](../ROADMAP.md) for details and timeline.
 Have a useful example? Submit a PR! We especially welcome examples for:
 
 - Integration with automation systems
-- Scheduled desk/monitor control
+- Scheduled desk/display control
 - Health monitoring and alerts
 - Multi-device coordination
 - WebSocket command implementation (v0.2.0)

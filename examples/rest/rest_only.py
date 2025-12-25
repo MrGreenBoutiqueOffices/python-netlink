@@ -12,36 +12,36 @@ TARGET_HEIGHT = 105
 
 
 async def main() -> None:
-    """Interact with the desk and monitors using only REST endpoints."""
+    """Interact with the desk and displays using only REST endpoints."""
     rest = NetlinkREST(host=HOST, token=TOKEN)
 
     try:
-        desk_status = await rest.get_desk_status()
+        desk = await rest.get_desk_status()
         print(
             "Desk status:",
-            f"height={desk_status.height}cm",
-            f"mode={desk_status.mode}",
-            f"moving={desk_status.moving}",
-            f"beep={desk_status.beep}",
+            f"height={desk.state.height}cm",
+            f"mode={desk.state.mode}",
+            f"moving={desk.state.moving}",
+            f"beep={desk.state.beep}",
         )
 
         print(f"Setting desk height to {TARGET_HEIGHT}cm")
         await rest.set_desk_height(TARGET_HEIGHT)
 
-        monitors = await rest.get_monitors()
-        if not monitors:
-            print("No monitors detected")
+        displays = await rest.get_displays()
+        if not displays:
+            print("No displays detected")
         else:
-            first = monitors[0]
-            print(f"First monitor: bus={first.bus} model={first.model}")
-            await rest.set_monitor_brightness(first.bus, 75)
-            await rest.set_monitor_power(first.bus, "on")
-            info = await rest.get_monitor_status(first.bus)
+            first = displays[0]
+            print(f"First display: bus={first.bus} model={first.model}")
+            await rest.set_display_brightness(first.bus, 75)
+            await rest.set_display_power(first.bus, "on")
+            info = await rest.get_display_status(first.bus)
             print(
-                "Monitor status:",
-                f"power={info.power}",
-                f"brightness={info.brightness}",
-                f"source={info.source}",
+                "Display status:",
+                f"power={info.state.power}",
+                f"brightness={info.state.brightness}",
+                f"source={info.state.source}",
             )
     finally:
         await rest.close()

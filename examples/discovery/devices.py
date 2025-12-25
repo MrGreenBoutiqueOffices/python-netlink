@@ -29,7 +29,7 @@ async def main() -> None:
         print(f"  API Version: {device.api_version}")
         print(f"  Has desk: {device.has_desk}")
         print(
-            f"  Monitors: {', '.join(device.monitors) if device.monitors else 'None'}"
+            f"  Displays: {', '.join(device.displays) if device.displays else 'None'}"
         )
         print(f"  WebSocket path: {device.ws_path}")
         print()

@@ -18,7 +18,7 @@
 [![Code Coverage][codecov-shield]][codecov-url]
 [![OpenSSF Scorecard][scorecard-shield]][scorecard-url]
 
-Asynchronous Python client for Netlink desk and monitor control.
+Asynchronous Python client for Netlink desk and display control.
 
 ## About
 
@@ -30,7 +30,7 @@ This Python package provides a modern, fully typed client for controlling Netlin
 
 ## Key Features
 
-- 🔌 **Real-time state updates** via WebSocket (desk position, monitor settings)
+- 🔌 **Real-time state updates** via WebSocket (desk position, display settings)
 - ⚡ **Fast WebSocket commands** with acknowledgements (~50% faster than REST)
 - 🔄 **Smart transport** - automatic fallback from WebSocket to REST when needed
 - 🔍 **mDNS/Zeroconf discovery** - automatically find Netlink devices on your network
@@ -64,8 +64,8 @@ async def main() -> None:
         # Control desk (automatically uses WebSocket when connected)
         await client.set_desk_height(120.0)
 
-        # Control monitors
-        await client.set_monitor_brightness(bus_id=0, brightness=80)
+        # Control displays
+        await client.set_display_brightness(bus_id=0, brightness=80)
 
         # Optional: Force specific transport if needed
         await client.set_desk_height(110.0, transport="rest")
@@ -82,7 +82,7 @@ The examples folder contains comprehensive guides for:
 - Device discovery with mDNS
 - Real-time WebSocket events
 - Desk control (height, calibration, presets)
-- Monitor control (power, brightness, volume, input source)
+- Display control (power, brightness, volume, input source)
 - Browser control
 - Error handling
 - Advanced usage patterns
@@ -113,7 +113,7 @@ async with NetlinkClient(host, token) as client:
     await asyncio.sleep(60)  # Listen for events
 ```
 
-### Control Desk & Monitors
+### Control Desk & Displays
 
 ```python
 # Desk control
@@ -121,11 +121,11 @@ await client.set_desk_height(120.0)
 await client.stop_desk()
 await client.calibrate_desk()
 
-# Monitor control
-monitors = await client.get_monitors()
-await client.set_monitor_power(bus_id=0, state="on")
-await client.set_monitor_brightness(bus_id=0, brightness=80)
-await client.set_monitor_source(bus_id=0, source="HDMI1")
+# Display control
+displays = await client.get_displays()
+await client.set_display_power(bus_id=0, state="on")
+await client.set_display_brightness(bus_id=0, brightness=80)
+await client.set_display_source(bus_id=0, source="HDMI1")
 ```
 
 More examples:
