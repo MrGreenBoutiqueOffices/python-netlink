@@ -148,9 +148,10 @@ async def listen_all_events() -> None:
         @client.on(EVENT_DESK_STATE)
         async def on_desk_state(data: dict) -> None:
             """Desk state changed."""
-            print(f"📊 Desk: {data['height']}cm, {data['mode']}")
-            if data.get('moving'):
-                print(f"  → Target: {data.get('target')}cm")
+            state = data.get("state", data)
+            print(f"📊 Desk: {state['height']}cm, {state['mode']}")
+            if state.get('moving'):
+                print(f"  → Target: {state.get('target')}cm")
 
         @client.on(EVENT_MONITOR_STATE)
         async def on_display_state(_raw_data: dict) -> None:
@@ -249,10 +250,11 @@ async def move_desk() -> None:
         # Subscribe to track movement
         @client.on("desk.state")
         async def on_desk_state(data: dict) -> None:
-            if data['moving']:
-                print(f"Moving... {data['height']}cm → {data['target']}cm")
+            state = data.get("state", data)
+            if state['moving']:
+                print(f"Moving... {state['height']}cm → {state['target']}cm")
             else:
-                print(f"Stopped at {data['height']}cm")
+                print(f"Stopped at {state['height']}cm")
 
         # Set target height (62-127 cm)
         print("Setting height to 120cm...")

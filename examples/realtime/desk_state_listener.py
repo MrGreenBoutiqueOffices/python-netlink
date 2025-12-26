@@ -21,10 +21,11 @@ async def main() -> None:
 
         @client.on("desk.state")
         async def on_desk_state(data: dict) -> None:
-            height = data.get("height")
-            mode = data.get("mode")
-            moving = data.get("moving", False)
-            target = data.get("target")
+            state = data.get("state", data)
+            height = state.get("height")
+            mode = state.get("mode")
+            moving = state.get("moving", False)
+            target = state.get("target")
 
             if (
                 height != prev_state["height"]

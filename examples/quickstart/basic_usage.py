@@ -21,7 +21,10 @@ async def main() -> None:
 
         @client.on("desk.state")
         async def on_desk_state(data: dict) -> None:
-            print(f"Desk state update: height={data['height']}cm, mode={data['mode']}")
+            state = data.get("state", data)
+            print(
+                f"Desk state update: height={state['height']}cm, mode={state['mode']}"
+            )
 
         @client.on("display.state")
         async def on_display_state(_data: dict) -> None:
