@@ -1,11 +1,23 @@
-"""Example that listens to desk state updates only."""
+"""Example that listens to desk state updates only.
+
+Before running, copy examples/.env.example to examples/.env and fill in your values.
+"""
 
 import asyncio
+import os
+
+from dotenv import load_dotenv
 
 from pynetlink import NetlinkClient
 
-HOST = "192.0.2.10"
-TOKEN = "your-bearer-token-here"  # noqa: S105
+load_dotenv()
+
+if not (host := os.getenv("NETLINK_HOST")) or not (token := os.getenv("NETLINK_TOKEN")):
+    MSG = "Please set NETLINK_HOST and NETLINK_TOKEN in examples/.env"
+    raise ValueError(MSG)
+
+HOST: str = host
+TOKEN: str = token
 
 
 async def main() -> None:

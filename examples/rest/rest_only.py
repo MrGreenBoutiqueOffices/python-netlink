@@ -1,13 +1,25 @@
-"""Example showing how to use the REST client without WebSocket."""
+"""Example showing how to use the REST client without WebSocket.
+
+Before running, copy examples/.env.example to examples/.env and fill in your values.
+"""
 
 from __future__ import annotations
 
 import asyncio
+import os
+
+from dotenv import load_dotenv
 
 from pynetlink.rest import NetlinkREST
 
-HOST = "192.0.2.10"
-TOKEN = "your-bearer-token-here"  # noqa: S105
+load_dotenv()
+
+if not (host := os.getenv("NETLINK_HOST")) or not (token := os.getenv("NETLINK_TOKEN")):
+    MSG = "Please set NETLINK_HOST and NETLINK_TOKEN in examples/.env"
+    raise ValueError(MSG)
+
+HOST: str = host
+TOKEN: str = token
 TARGET_HEIGHT = 105
 
 
