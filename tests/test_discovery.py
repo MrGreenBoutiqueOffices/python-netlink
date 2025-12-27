@@ -86,7 +86,7 @@ async def test_netlink_device_from_service_info() -> None:
         b"device_id": b"abc123",
         b"device_name": b"Office Netlink",
         b"has_desk": b"true",
-        b"monitors": b"20,21",
+        b"displays": b"20,21",
     }
 
     device = NetlinkDevice.from_service_info(mock_service_info)
@@ -98,7 +98,7 @@ async def test_netlink_device_from_service_info() -> None:
     assert device.device_id == "abc123"
     assert device.device_name == "Office Netlink"
     assert device.has_desk is True
-    assert device.monitors == ["20", "21"]
+    assert device.displays == ["20", "21"]
 
 
 async def test_netlink_device_from_service_info_with_ipv6() -> None:
@@ -129,7 +129,7 @@ async def test_netlink_device_from_service_info_missing_properties() -> None:
 
     assert device.device_name == "Unknown"
     assert device.host == ""  # No parsed addresses
-    assert not device.monitors
+    assert not device.displays
     assert device.ws_path == "/socket.io"
 
 

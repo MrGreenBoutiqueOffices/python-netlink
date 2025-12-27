@@ -146,7 +146,7 @@ class NetlinkWebSocket:
 
         Args:
         ----
-            event: Event name (e.g., "desk.state", "monitor.state")
+            event: Event name (e.g., "desk.state", "display.state")
 
         Returns:
         -------

@@ -1,10 +1,4 @@
 {
-  "height": 95.0,
-  "mode": "stopped",
-  "moving": false,
-  "error": null,
-  "target": 110.0,
-  "beep": "on",
   "capabilities": {
     "supports": {
       "height": true,
@@ -18,5 +12,13 @@
         "type": "desk"
       }
     ]
+  },
+  "state": {
+    "height": 95.0,
+    "mode": "stopped",
+    "moving": false,
+    "error": null,
+    "target": 110.0,
+    "beep": "on"
   }
 }

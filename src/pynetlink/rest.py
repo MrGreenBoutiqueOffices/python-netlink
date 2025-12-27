@@ -17,7 +17,7 @@ from .exceptions import (
     NetlinkConnectionError,
     NetlinkTimeoutError,
 )
-from .models import BrowserState, DeskStatus, DeviceInfo, MonitorState, MonitorSummary
+from .models import BrowserState, Desk, DeviceInfo, Display, DisplaySummary
 
 VERSION = metadata.version(__package__ or "pynetlink")
 
@@ -125,7 +125,7 @@ class NetlinkREST:
         return DeviceInfo.from_dict(data)
 
     # Desk endpoints
-    async def get_desk_status(self) -> DeskStatus:
+    async def get_desk_status(self) -> Desk:
         """Get full desk status.
 
         Returns
@@ -134,7 +134,7 @@ class NetlinkREST:
 
         """
         data = await self._request("desk/status")
-        return DeskStatus.from_dict(data)
+        return Desk.from_dict(data)
 
     async def set_desk_height(self, height: float) -> dict[str, Any]:
         """Set target desk height.
@@ -214,58 +214,58 @@ class NetlinkREST:
 
         return await self._request("desk/beep", method=METH_POST, json={"state": state})
 
-    # Monitor endpoints
-    async def get_monitors(self) -> list[MonitorSummary]:
-        """Get list of connected monitors.
+    # Display endpoints
+    async def get_displays(self) -> list[DisplaySummary]:
+        """Get list of connected displays.
 
         Returns
         -------
-            List of monitor summaries
+            List of display summaries
 
         """
-        data = await self._request("monitors")
+        data = await self._request("displays")
         # API returns list directly
         if isinstance(data, list):
-            return [MonitorSummary.from_dict(m) for m in data]
-        # Or wrapped in dict with "monitors" key
-        return [MonitorSummary.from_dict(m) for m in data.get("monitors", [])]
+            return [DisplaySummary.from_dict(m) for m in data]
+        # Or wrapped in dict with "displays" key
+        return [DisplaySummary.from_dict(m) for m in data.get("displays", [])]
 
-    async def get_monitor_status(self, bus_id: int | str) -> MonitorState:
-        """Get detailed monitor status.
+    async def get_display_status(self, bus_id: int | str) -> Display:
+        """Get detailed display status.
 
         Args:
         ----
-            bus_id: Monitor bus ID
+            bus_id: Display bus ID
 
         Returns:
         -------
-            Complete monitor status
+            Complete display status
 
         """
-        data = await self._request(f"monitor/{bus_id}/status")
-        return MonitorState.from_dict(data)
+        data = await self._request(f"display/{bus_id}/status")
+        return Display.from_dict(data)
 
-    async def get_monitor_power(self, bus_id: int | str) -> str | None:
-        """Get monitor power state.
+    async def get_display_power(self, bus_id: int | str) -> str | None:
+        """Get display power state.
 
         Args:
         ----
-            bus_id: Monitor bus ID
+            bus_id: Display bus ID
 
         Returns:
         -------
             Power state ("on", "off", "standby")
 
         """
-        data = await self._request(f"monitor/{bus_id}/power")
+        data = await self._request(f"display/{bus_id}/power")
         return data.get("state")
 
-    async def set_monitor_power(self, bus_id: int | str, state: str) -> dict[str, Any]:
-        """Set monitor power state.
+    async def set_display_power(self, bus_id: int | str, state: str) -> dict[str, Any]:
+        """Set display power state.
 
         Args:
         ----
-            bus_id: Monitor bus ID
+            bus_id: Display bus ID
             state: Power state ("on" or "off")
 
         Returns:
@@ -274,36 +274,36 @@ class NetlinkREST:
 
         """
         return await self._request(
-            f"monitor/{bus_id}/power",
+            f"display/{bus_id}/power",
             method=METH_PUT,
             json={"state": state},
         )
 
-    async def get_monitor_source(self, bus_id: int | str) -> str | None:
-        """Get monitor input source.
+    async def get_display_source(self, bus_id: int | str) -> str | None:
+        """Get display input source.
 
         Args:
         ----
-            bus_id: Monitor bus ID
+            bus_id: Display bus ID
 
         Returns:
         -------
             Current input source
 
         """
-        data = await self._request(f"monitor/{bus_id}/source")
+        data = await self._request(f"display/{bus_id}/source")
         return data.get("source")
 
-    async def set_monitor_source(
+    async def set_display_source(
         self,
         bus_id: int | str,
         source: str,
     ) -> dict[str, Any]:
-        """Set monitor input source.
+        """Set display input source.
 
         Args:
         ----
-            bus_id: Monitor bus ID
+            bus_id: Display bus ID
             source: Input source (e.g., "HDMI1", "USBC")
 
         Returns:
@@ -312,36 +312,36 @@ class NetlinkREST:
 
         """
         return await self._request(
-            f"monitor/{bus_id}/source",
+            f"display/{bus_id}/source",
             method=METH_PUT,
             json={"source": source},
         )
 
-    async def get_monitor_brightness(self, bus_id: int | str) -> int | None:
-        """Get monitor brightness level.
+    async def get_display_brightness(self, bus_id: int | str) -> int | None:
+        """Get display brightness level.
 
         Args:
         ----
-            bus_id: Monitor bus ID
+            bus_id: Display bus ID
 
         Returns:
         -------
             Brightness level (0-100)
 
         """
-        data = await self._request(f"monitor/{bus_id}/brightness")
+        data = await self._request(f"display/{bus_id}/brightness")
         return data.get("brightness")
 
-    async def set_monitor_brightness(
+    async def set_display_brightness(
         self,
         bus_id: int | str,
         brightness: int,
     ) -> dict[str, Any]:
-        """Set monitor brightness level.
+        """Set display brightness level.
 
         Args:
         ----
-            bus_id: Monitor bus ID
+            bus_id: Display bus ID
             brightness: Brightness level (0-100)
 
         Returns:
@@ -358,36 +358,36 @@ class NetlinkREST:
             raise ValueError(msg)
 
         return await self._request(
-            f"monitor/{bus_id}/brightness",
+            f"display/{bus_id}/brightness",
             method=METH_PUT,
             json={"brightness": brightness},
         )
 
-    async def get_monitor_volume(self, bus_id: int | str) -> int | None:
-        """Get monitor volume level.
+    async def get_display_volume(self, bus_id: int | str) -> int | None:
+        """Get display volume level.
 
         Args:
         ----
-            bus_id: Monitor bus ID
+            bus_id: Display bus ID
 
         Returns:
         -------
             Volume level (0-100)
 
         """
-        data = await self._request(f"monitor/{bus_id}/volume")
+        data = await self._request(f"display/{bus_id}/volume")
         return data.get("volume")
 
-    async def set_monitor_volume(
+    async def set_display_volume(
         self,
         bus_id: int | str,
         volume: int,
     ) -> dict[str, Any]:
-        """Set monitor volume level.
+        """Set display volume level.
 
         Args:
         ----
-            bus_id: Monitor bus ID
+            bus_id: Display bus ID
             volume: Volume level (0-100)
 
         Returns:
@@ -404,21 +404,21 @@ class NetlinkREST:
             raise ValueError(msg)
 
         return await self._request(
-            f"monitor/{bus_id}/volume",
+            f"display/{bus_id}/volume",
             method=METH_PUT,
             json={"volume": volume},
         )
 
-    async def patch_monitor(
+    async def patch_display(
         self,
         bus_id: int | str,
         **kwargs: Any,
     ) -> dict[str, Any]:
-        """Update multiple monitor properties at once.
+        """Update multiple display properties at once.
 
         Args:
         ----
-            bus_id: Monitor bus ID
+            bus_id: Display bus ID
             **kwargs: Properties to update (power, brightness, volume, source)
 
         Returns:
@@ -426,7 +426,7 @@ class NetlinkREST:
             Confirmation response
 
         """
-        return await self._request(f"monitor/{bus_id}", method=METH_PATCH, json=kwargs)
+        return await self._request(f"display/{bus_id}", method=METH_PATCH, json=kwargs)
 
     # Browser endpoints
     async def get_browser_url(self) -> str:

@@ -13,14 +13,14 @@ from .const import (
     DEFAULT_REQUEST_TIMEOUT,
     EVENT_DESK_STATE,
     EVENT_DEVICE_INFO,
-    EVENT_MONITOR_STATE,
+    EVENT_DISPLAY_STATE,
 )
 from .models import (
+    Desk,
     DeskState,
-    DeskStatus,
     DeviceInfo,
-    MonitorState,
-    MonitorSummary,
+    Display,
+    DisplaySummary,
     NetlinkDevice,
 )
 from .rest import NetlinkREST
@@ -65,7 +65,7 @@ class NetlinkClient:
 
     # State cache from WebSocket
     _desk_state: DeskState | None = field(default=None, init=False, repr=False)
-    _monitors: dict[str, MonitorState] = field(
+    _displays: dict[str, Display] = field(
         default_factory=dict,
         init=False,
         repr=False,
@@ -79,7 +79,7 @@ class NetlinkClient:
 
         # Wire up WebSocket events to update internal state
         self._ws.on(EVENT_DESK_STATE)(self._on_desk_state)
-        self._ws.on(EVENT_MONITOR_STATE)(self._on_monitor_state)
+        self._ws.on(EVENT_DISPLAY_STATE)(self._on_display_state)
         self._ws.on(EVENT_DEVICE_INFO)(self._on_device_info)
 
     async def __aenter__(self) -> Self:
@@ -134,20 +134,23 @@ class NetlinkClient:
         """Update internal desk state from WebSocket."""
         # Ensure payload is parsed (fixtures may supply JSON strings)
         payload = json.loads(data) if isinstance(data, str) else data
-        # Extract actual state data from nested structure
-        state_data = payload.get("data", payload)
+        # Extract actual state data from envelope
+        envelope_data = payload.get("data", payload)
+        # Extract nested state from {capabilities, inventory, state: {...}}
+        # Fallback to flat structure for backward compatibility
+        state_data = envelope_data.get("state", envelope_data)
         self._desk_state = DeskState.from_dict(state_data)
 
-    async def _on_monitor_state(self, data: str | dict[str, Any]) -> None:
-        """Update internal monitor state from WebSocket."""
+    async def _on_display_state(self, data: str | dict[str, Any]) -> None:
+        """Update internal display state from WebSocket."""
         # Ensure payload is parsed (fixtures may supply JSON strings)
         payload = json.loads(data) if isinstance(data, str) else data
         # Extract actual state data from nested structure
         state_data = payload.get("data", payload)
-        state = MonitorState.from_dict(state_data)
+        display = Display.from_dict(state_data)
         # Use string bus_id as key
-        bus_key = str(state.bus)
-        self._monitors[bus_key] = state
+        bus_key = str(display.bus)
+        self._displays[bus_key] = display
 
     async def _on_device_info(self, data: str | dict[str, Any]) -> None:
         """Update internal device info from WebSocket."""
@@ -170,15 +173,15 @@ class NetlinkClient:
         return self._desk_state
 
     @property
-    def monitors(self) -> dict[str, MonitorState]:
-        """Latest monitor states from WebSocket.
+    def displays(self) -> dict[str, Display]:
+        """Latest display states from WebSocket.
 
         Returns
         -------
-            Dictionary mapping bus_id to MonitorState
+            Dictionary mapping bus_id to Display
 
         """
-        return self._monitors
+        return self._displays
 
     @property
     def device_info(self) -> DeviceInfo | None:
@@ -208,7 +211,7 @@ class NetlinkClient:
         return await self._rest.get_device_info()
 
     # Desk control methods (delegate to REST)
-    async def get_desk_status(self) -> DeskStatus:
+    async def get_desk_status(self) -> Desk:
         """Get full desk status from REST API.
 
         Returns
@@ -343,42 +346,42 @@ class NetlinkClient:
             return await self._ws.send_command("command.desk.beep", {"state": state})
         return await self._rest.set_desk_beep(state=state)
 
-    # Monitor control methods (delegate to REST)
-    async def get_monitors(self) -> list[MonitorSummary]:
-        """Get list of connected monitors.
+    # Display control methods (delegate to REST)
+    async def get_displays(self) -> list[DisplaySummary]:
+        """Get list of connected displays.
 
         Returns
         -------
-            List of monitor summaries
+            List of display summaries
 
         """
-        return await self._rest.get_monitors()
+        return await self._rest.get_displays()
 
-    async def get_monitor_status(self, bus_id: int | str) -> MonitorState:
-        """Get detailed monitor status.
+    async def get_display_status(self, bus_id: int | str) -> Display:
+        """Get detailed display status.
 
         Args:
         ----
-            bus_id: Monitor bus ID
+            bus_id: Display bus ID
 
         Returns:
         -------
-            Complete monitor status
+            Complete display status
 
         """
-        return await self._rest.get_monitor_status(bus_id)
+        return await self._rest.get_display_status(bus_id)
 
-    async def set_monitor_power(
+    async def set_display_power(
         self,
         bus_id: int | str,
         state: str,
         transport: str = "auto",
     ) -> dict[str, Any]:
-        """Set monitor power state.
+        """Set display power state.
 
         Args:
         ----
-            bus_id: Monitor bus ID
+            bus_id: Display bus ID
             state: Power state ("on" or "off")
             transport: Transport method - "auto", "websocket", or "rest"
 
@@ -390,28 +393,28 @@ class NetlinkClient:
         if transport == "auto":
             if self._ws.connected:
                 return await self._ws.send_command(
-                    "command.monitor.power",
+                    "command.display.power",
                     {"bus": str(bus_id), "state": state},
                 )
-            return await self._rest.set_monitor_power(bus_id, state)
+            return await self._rest.set_display_power(bus_id, state)
         if transport == "websocket":
             return await self._ws.send_command(
-                "command.monitor.power",
+                "command.display.power",
                 {"bus": str(bus_id), "state": state},
             )
-        return await self._rest.set_monitor_power(bus_id, state)
+        return await self._rest.set_display_power(bus_id, state)
 
-    async def set_monitor_brightness(
+    async def set_display_brightness(
         self,
         bus_id: int | str,
         brightness: int,
         transport: str = "auto",
     ) -> dict[str, Any]:
-        """Set monitor brightness level.
+        """Set display brightness level.
 
         Args:
         ----
-            bus_id: Monitor bus ID
+            bus_id: Display bus ID
             brightness: Brightness level (0-100)
             transport: Transport method - "auto", "websocket", or "rest"
 
@@ -423,28 +426,28 @@ class NetlinkClient:
         if transport == "auto":
             if self._ws.connected:
                 return await self._ws.send_command(
-                    "command.monitor.brightness",
+                    "command.display.brightness",
                     {"bus": str(bus_id), "brightness": brightness},
                 )
-            return await self._rest.set_monitor_brightness(bus_id, brightness)
+            return await self._rest.set_display_brightness(bus_id, brightness)
         if transport == "websocket":
             return await self._ws.send_command(
-                "command.monitor.brightness",
+                "command.display.brightness",
                 {"bus": str(bus_id), "brightness": brightness},
             )
-        return await self._rest.set_monitor_brightness(bus_id, brightness)
+        return await self._rest.set_display_brightness(bus_id, brightness)
 
-    async def set_monitor_volume(
+    async def set_display_volume(
         self,
         bus_id: int | str,
         volume: int,
         transport: str = "auto",
     ) -> dict[str, Any]:
-        """Set monitor volume level.
+        """Set display volume level.
 
         Args:
         ----
-            bus_id: Monitor bus ID
+            bus_id: Display bus ID
             volume: Volume level (0-100)
             transport: Transport method - "auto", "websocket", or "rest"
 
@@ -456,28 +459,28 @@ class NetlinkClient:
         if transport == "auto":
             if self._ws.connected:
                 return await self._ws.send_command(
-                    "command.monitor.volume",
+                    "command.display.volume",
                     {"bus": str(bus_id), "volume": volume},
                 )
-            return await self._rest.set_monitor_volume(bus_id, volume)
+            return await self._rest.set_display_volume(bus_id, volume)
         if transport == "websocket":
             return await self._ws.send_command(
-                "command.monitor.volume",
+                "command.display.volume",
                 {"bus": str(bus_id), "volume": volume},
             )
-        return await self._rest.set_monitor_volume(bus_id, volume)
+        return await self._rest.set_display_volume(bus_id, volume)
 
-    async def set_monitor_source(
+    async def set_display_source(
         self,
         bus_id: int | str,
         source: str,
         transport: str = "auto",
     ) -> dict[str, Any]:
-        """Set monitor input source.
+        """Set display input source.
 
         Args:
         ----
-            bus_id: Monitor bus ID
+            bus_id: Display bus ID
             source: Input source (e.g., "HDMI1", "USBC")
             transport: Transport method - "auto", "websocket", or "rest"
 
@@ -489,16 +492,16 @@ class NetlinkClient:
         if transport == "auto":
             if self._ws.connected:
                 return await self._ws.send_command(
-                    "command.monitor.source",
+                    "command.display.source",
                     {"bus": str(bus_id), "source": source},
                 )
-            return await self._rest.set_monitor_source(bus_id, source)
+            return await self._rest.set_display_source(bus_id, source)
         if transport == "websocket":
             return await self._ws.send_command(
-                "command.monitor.source",
+                "command.display.source",
                 {"bus": str(bus_id), "source": source},
             )
-        return await self._rest.set_monitor_source(bus_id, source)
+        return await self._rest.set_display_source(bus_id, source)
 
     # Browser control methods (delegate to REST)
     async def get_browser_url(self) -> str:

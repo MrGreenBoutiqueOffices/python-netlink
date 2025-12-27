@@ -59,11 +59,11 @@ async def test_desk_get_status(aresponses: ResponsesMockServer) -> None:
     async with ClientSession() as session:
         rest = NetlinkREST(host="192.168.1.100", token="test-token")
         rest._session = session
-        status = await rest.get_desk_status()
+        desk = await rest.get_desk_status()
 
-        assert status.height == 95.0
-        assert status.mode == "stopped"
-        assert status.moving is False
+        assert desk.state.height == 95.0
+        assert desk.state.mode == "stopped"
+        assert desk.state.moving is False
 
 
 async def test_desk_set_height(aresponses: ResponsesMockServer) -> None:
@@ -201,92 +201,92 @@ async def test_desk_beep_state_invalid() -> None:
         await rest.set_desk_beep(state="maybe")
 
 
-async def test_monitors_list(aresponses: ResponsesMockServer) -> None:
-    """Test GET /api/v1/monitors."""
+async def test_displays_list(aresponses: ResponsesMockServer) -> None:
+    """Test GET /api/v1/displays."""
     aresponses.add(
         "192.168.1.100",
-        "/api/v1/monitors",
+        "/api/v1/displays",
         METH_GET,
         aresponses.Response(
             status=200,
             headers={"Content-Type": "application/json"},
-            text=load_fixtures("monitors_list_response.json"),
+            text=load_fixtures("displays_list_response.json"),
         ),
     )
 
     async with ClientSession() as session:
         rest = NetlinkREST(host="192.168.1.100", token="test-token")
         rest._session = session
-        monitors = await rest.get_monitors()
+        displays = await rest.get_displays()
 
-        assert len(monitors) == 1
-        assert monitors[0].id == 0
-        assert monitors[0].bus == 20
-        assert monitors[0].model == "Dell U2723QE"
+        assert len(displays) == 1
+        assert displays[0].id == 0
+        assert displays[0].bus == 20
+        assert displays[0].model == "Dell U2723QE"
 
 
-async def test_monitors_list_wrapped(aresponses: ResponsesMockServer) -> None:
-    """Test GET /api/v1/monitors when wrapped in dict."""
-    monitors_payload = {
-        "monitors": [
+async def test_displays_list_wrapped(aresponses: ResponsesMockServer) -> None:
+    """Test GET /api/v1/displays when wrapped in dict."""
+    displays_payload = {
+        "displays": [
             {
                 "id": 1,
                 "bus": 30,
                 "model": "LG UltraFine",
-                "type": "monitor",
+                "type": "display",
             }
         ]
     }
 
     aresponses.add(
         "192.168.1.100",
-        "/api/v1/monitors",
+        "/api/v1/displays",
         METH_GET,
         aresponses.Response(
             status=200,
             headers={"Content-Type": "application/json"},
-            text=json.dumps(monitors_payload),
+            text=json.dumps(displays_payload),
         ),
     )
 
     async with ClientSession() as session:
         rest = NetlinkREST(host="192.168.1.100", token="test-token")
         rest._session = session
-        monitors = await rest.get_monitors()
+        displays = await rest.get_displays()
 
-        assert len(monitors) == 1
-        assert monitors[0].id == 1
-        assert monitors[0].bus == 30
+        assert len(displays) == 1
+        assert displays[0].id == 1
+        assert displays[0].bus == 30
 
 
-async def test_monitor_get_status(aresponses: ResponsesMockServer) -> None:
-    """Test GET /api/v1/monitor/{bus_id}/status."""
+async def test_display_get_status(aresponses: ResponsesMockServer) -> None:
+    """Test GET /api/v1/display/{bus_id}/status."""
     aresponses.add(
         "192.168.1.100",
-        "/api/v1/monitor/20/status",
+        "/api/v1/display/20/status",
         METH_GET,
         aresponses.Response(
             status=200,
             headers={"Content-Type": "application/json"},
-            text=load_fixtures("monitor_state.json"),
+            text=load_fixtures("display_state.json"),
         ),
     )
 
     async with ClientSession() as session:
         rest = NetlinkREST(host="192.168.1.100", token="test-token")
         rest._session = session
-        status = await rest.get_monitor_status(bus_id=20)
+        status = await rest.get_display_status(bus_id=20)
 
         assert status.bus == 20
-        assert status.power == "on"
-        assert status.brightness == 72
+        assert status.state.power == "on"
+        assert status.state.brightness == 72
 
 
-async def test_monitor_set_power(aresponses: ResponsesMockServer) -> None:
-    """Test PUT /api/v1/monitor/{bus_id}/power."""
+async def test_display_set_power(aresponses: ResponsesMockServer) -> None:
+    """Test PUT /api/v1/display/{bus_id}/power."""
     aresponses.add(
         "192.168.1.100",
-        "/api/v1/monitor/20/power",
+        "/api/v1/display/20/power",
         METH_PUT,
         aresponses.Response(
             status=200,
@@ -298,14 +298,14 @@ async def test_monitor_set_power(aresponses: ResponsesMockServer) -> None:
     async with ClientSession() as session:
         rest = NetlinkREST(host="192.168.1.100", token="test-token")
         rest._session = session
-        await rest.set_monitor_power(bus_id=20, state="on")
+        await rest.set_display_power(bus_id=20, state="on")
 
 
-async def test_monitor_get_power(aresponses: ResponsesMockServer) -> None:
-    """Test GET /api/v1/monitor/{bus_id}/power."""
+async def test_display_get_power(aresponses: ResponsesMockServer) -> None:
+    """Test GET /api/v1/display/{bus_id}/power."""
     aresponses.add(
         "192.168.1.100",
-        "/api/v1/monitor/20/power",
+        "/api/v1/display/20/power",
         METH_GET,
         aresponses.Response(
             status=200,
@@ -317,16 +317,16 @@ async def test_monitor_get_power(aresponses: ResponsesMockServer) -> None:
     async with ClientSession() as session:
         rest = NetlinkREST(host="192.168.1.100", token="test-token")
         rest._session = session
-        state = await rest.get_monitor_power(bus_id=20)
+        state = await rest.get_display_power(bus_id=20)
 
         assert state == "off"
 
 
-async def test_monitor_set_brightness(aresponses: ResponsesMockServer) -> None:
-    """Test PUT /api/v1/monitor/{bus_id}/brightness."""
+async def test_display_set_brightness(aresponses: ResponsesMockServer) -> None:
+    """Test PUT /api/v1/display/{bus_id}/brightness."""
     aresponses.add(
         "192.168.1.100",
-        "/api/v1/monitor/20/brightness",
+        "/api/v1/display/20/brightness",
         METH_PUT,
         aresponses.Response(
             status=200,
@@ -338,27 +338,27 @@ async def test_monitor_set_brightness(aresponses: ResponsesMockServer) -> None:
     async with ClientSession() as session:
         rest = NetlinkREST(host="192.168.1.100", token="test-token")
         rest._session = session
-        await rest.set_monitor_brightness(bus_id=20, brightness=80)
+        await rest.set_display_brightness(bus_id=20, brightness=80)
 
 
-async def test_monitor_set_brightness_invalid_range() -> None:
-    """Test monitor brightness validation."""
+async def test_display_set_brightness_invalid_range() -> None:
+    """Test display brightness validation."""
     rest = NetlinkREST(host="192.168.1.100", token="test-token")
 
     # Too low
     with pytest.raises(ValueError, match="Brightness must be between"):
-        await rest.set_monitor_brightness(bus_id=20, brightness=-10)
+        await rest.set_display_brightness(bus_id=20, brightness=-10)
 
     # Too high
     with pytest.raises(ValueError, match="Brightness must be between"):
-        await rest.set_monitor_brightness(bus_id=20, brightness=150)
+        await rest.set_display_brightness(bus_id=20, brightness=150)
 
 
-async def test_monitor_get_brightness(aresponses: ResponsesMockServer) -> None:
-    """Test GET /api/v1/monitor/{bus_id}/brightness."""
+async def test_display_get_brightness(aresponses: ResponsesMockServer) -> None:
+    """Test GET /api/v1/display/{bus_id}/brightness."""
     aresponses.add(
         "192.168.1.100",
-        "/api/v1/monitor/20/brightness",
+        "/api/v1/display/20/brightness",
         METH_GET,
         aresponses.Response(
             status=200,
@@ -370,16 +370,16 @@ async def test_monitor_get_brightness(aresponses: ResponsesMockServer) -> None:
     async with ClientSession() as session:
         rest = NetlinkREST(host="192.168.1.100", token="test-token")
         rest._session = session
-        brightness = await rest.get_monitor_brightness(bus_id=20)
+        brightness = await rest.get_display_brightness(bus_id=20)
 
         assert brightness == 65
 
 
-async def test_monitor_set_volume(aresponses: ResponsesMockServer) -> None:
-    """Test PUT /api/v1/monitor/{bus_id}/volume."""
+async def test_display_set_volume(aresponses: ResponsesMockServer) -> None:
+    """Test PUT /api/v1/display/{bus_id}/volume."""
     aresponses.add(
         "192.168.1.100",
-        "/api/v1/monitor/20/volume",
+        "/api/v1/display/20/volume",
         METH_PUT,
         aresponses.Response(
             status=200,
@@ -391,27 +391,27 @@ async def test_monitor_set_volume(aresponses: ResponsesMockServer) -> None:
     async with ClientSession() as session:
         rest = NetlinkREST(host="192.168.1.100", token="test-token")
         rest._session = session
-        await rest.set_monitor_volume(bus_id=20, volume=50)
+        await rest.set_display_volume(bus_id=20, volume=50)
 
 
-async def test_monitor_set_volume_invalid_range() -> None:
-    """Test monitor volume validation."""
+async def test_display_set_volume_invalid_range() -> None:
+    """Test display volume validation."""
     rest = NetlinkREST(host="192.168.1.100", token="test-token")
 
     # Too low
     with pytest.raises(ValueError, match="Volume must be between"):
-        await rest.set_monitor_volume(bus_id=20, volume=-5)
+        await rest.set_display_volume(bus_id=20, volume=-5)
 
     # Too high
     with pytest.raises(ValueError, match="Volume must be between"):
-        await rest.set_monitor_volume(bus_id=20, volume=110)
+        await rest.set_display_volume(bus_id=20, volume=110)
 
 
-async def test_monitor_get_volume(aresponses: ResponsesMockServer) -> None:
-    """Test GET /api/v1/monitor/{bus_id}/volume."""
+async def test_display_get_volume(aresponses: ResponsesMockServer) -> None:
+    """Test GET /api/v1/display/{bus_id}/volume."""
     aresponses.add(
         "192.168.1.100",
-        "/api/v1/monitor/20/volume",
+        "/api/v1/display/20/volume",
         METH_GET,
         aresponses.Response(
             status=200,
@@ -423,16 +423,16 @@ async def test_monitor_get_volume(aresponses: ResponsesMockServer) -> None:
     async with ClientSession() as session:
         rest = NetlinkREST(host="192.168.1.100", token="test-token")
         rest._session = session
-        volume = await rest.get_monitor_volume(bus_id=20)
+        volume = await rest.get_display_volume(bus_id=20)
 
         assert volume == 35
 
 
-async def test_monitor_set_source(aresponses: ResponsesMockServer) -> None:
-    """Test PUT /api/v1/monitor/{bus_id}/source."""
+async def test_display_set_source(aresponses: ResponsesMockServer) -> None:
+    """Test PUT /api/v1/display/{bus_id}/source."""
     aresponses.add(
         "192.168.1.100",
-        "/api/v1/monitor/20/source",
+        "/api/v1/display/20/source",
         METH_PUT,
         aresponses.Response(
             status=200,
@@ -444,14 +444,14 @@ async def test_monitor_set_source(aresponses: ResponsesMockServer) -> None:
     async with ClientSession() as session:
         rest = NetlinkREST(host="192.168.1.100", token="test-token")
         rest._session = session
-        await rest.set_monitor_source(bus_id=20, source="HDMI1")
+        await rest.set_display_source(bus_id=20, source="HDMI1")
 
 
-async def test_monitor_get_source(aresponses: ResponsesMockServer) -> None:
-    """Test GET /api/v1/monitor/{bus_id}/source."""
+async def test_display_get_source(aresponses: ResponsesMockServer) -> None:
+    """Test GET /api/v1/display/{bus_id}/source."""
     aresponses.add(
         "192.168.1.100",
-        "/api/v1/monitor/20/source",
+        "/api/v1/display/20/source",
         METH_GET,
         aresponses.Response(
             status=200,
@@ -463,7 +463,7 @@ async def test_monitor_get_source(aresponses: ResponsesMockServer) -> None:
     async with ClientSession() as session:
         rest = NetlinkREST(host="192.168.1.100", token="test-token")
         rest._session = session
-        source = await rest.get_monitor_source(bus_id=20)
+        source = await rest.get_display_source(bus_id=20)
 
         assert source == "HDMI2"
 
@@ -627,9 +627,9 @@ async def test_request_creates_session(aresponses: ResponsesMockServer) -> None:
 
     rest = NetlinkREST(host="192.168.1.100", token="test-token")
 
-    status = await rest.get_desk_status()
+    desk = await rest.get_desk_status()
 
-    assert status.height == 95.0
+    assert desk.state.height == 95.0
     assert rest._session is not None
     assert rest._close_session is True
     await rest.close()
@@ -705,11 +705,11 @@ async def test_get_browser_status(aresponses: ResponsesMockServer) -> None:
         assert status.url == "https://example.com"
 
 
-async def test_patch_monitor(aresponses: ResponsesMockServer) -> None:
-    """Test PATCH /api/v1/monitor/{bus_id}."""
+async def test_patch_display(aresponses: ResponsesMockServer) -> None:
+    """Test PATCH /api/v1/display/{bus_id}."""
     aresponses.add(
         "192.168.1.100",
-        "/api/v1/monitor/20",
+        "/api/v1/display/20",
         METH_PATCH,
         aresponses.Response(
             status=200,
@@ -721,7 +721,7 @@ async def test_patch_monitor(aresponses: ResponsesMockServer) -> None:
     async with ClientSession() as session:
         rest = NetlinkREST(host="192.168.1.100", token="test-token")
         rest._session = session
-        await rest.patch_monitor(bus_id=20, brightness=75, power="on")
+        await rest.patch_display(bus_id=20, brightness=75, power="on")
 
 
 async def test_close_only_when_owned() -> None:
@@ -756,8 +756,8 @@ async def test_rest_context_manager_closes_session(
     )
 
     async with NetlinkREST(host="192.168.1.100", token="test-token") as rest:
-        status = await rest.get_desk_status()
-        assert status.height == 95.0
+        desk = await rest.get_desk_status()
+        assert desk.state.height == 95.0
         assert rest._session is not None
 
     assert rest._session is not None

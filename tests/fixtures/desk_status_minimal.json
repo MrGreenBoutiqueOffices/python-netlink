@@ -1,5 +1,9 @@
 {
-  "height": 75.0,
-  "mode": "idle",
-  "moving": false
+  "capabilities": {},
+  "inventory": {},
+  "state": {
+    "height": 75.0,
+    "mode": "idle",
+    "moving": false
+  }
 }

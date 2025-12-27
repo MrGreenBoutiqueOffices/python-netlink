@@ -3,18 +3,19 @@
 from __future__ import annotations
 
 from .browser import BrowserState
-from .desk import DeskState, DeskStatus
+from .desk import Desk, DeskState
 from .discovery import NetlinkDevice
-from .monitor import MonitorState, MonitorSummary
+from .display import Display, DisplayState, DisplaySummary
 from .system import DeviceInfo, MQTTStatus
 
 __all__ = [
     "BrowserState",
+    "Desk",
     "DeskState",
-    "DeskStatus",
     "DeviceInfo",
+    "Display",
+    "DisplayState",
+    "DisplaySummary",
     "MQTTStatus",
-    "MonitorState",
-    "MonitorSummary",
     "NetlinkDevice",
 ]

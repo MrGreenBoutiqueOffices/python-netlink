@@ -1,13 +1,13 @@
 [project]
 name = "pynetlink"
 version = "0.0.0"
-description = "Async Python client for Netlink desk and monitor control"
+description = "Async Python client for Netlink desk and display control"
 authors = [{ name="Klaas Schoute", email="<k.schoute@net-os.com>"}]
 maintainers = [{name="Klaas Schoute", email="<k.schoute@net-os.com>"}]
 license = "LGPL-3.0-or-later"
 requires-python = ">=3.12"
 readme = "README.md"
-keywords = ["pynetlink", "netlink", "desk", "monitor", "home-assistant", "iot", "api", "async", "client"]
+keywords = ["pynetlink", "netlink", "desk", "display", "home-assistant", "iot", "api", "async", "client"]
 classifiers = [
   "Framework :: AsyncIO",
   "Intended Audience :: Developers",

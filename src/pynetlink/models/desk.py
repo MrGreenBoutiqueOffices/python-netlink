@@ -10,9 +10,7 @@ from mashumaro import DataClassDictMixin
 
 @dataclass
 class DeskState(DataClassDictMixin):
-    """Real-time desk state from WebSocket `desk.state` event.
-
-    Based on DeskSnapshot TypedDict from netlink-webserver.
+    """Current state values of a desk (nested in Desk).
 
     Attributes
     ----------
@@ -22,8 +20,6 @@ class DeskState(DataClassDictMixin):
         error: Error message if any (optional)
         target: Target height if moving, None otherwise
         beep: Beep setting ("on" or "off", may be present in some events)
-        capabilities: Desk capabilities (optional)
-        inventory: Desk inventory info (optional)
 
     """
 
@@ -33,8 +29,6 @@ class DeskState(DataClassDictMixin):
     error: str | None = None
     target: float | None = None
     beep: str | None = None
-    capabilities: dict[str, Any] | None = None
-    inventory: dict[str, Any] | None = None
 
     def __post_init__(self) -> None:
         """Validate height range."""
@@ -44,29 +38,22 @@ class DeskState(DataClassDictMixin):
 
 
 @dataclass
-class DeskStatus(DataClassDictMixin):
-    """Full desk status from REST API `/api/v1/desk/status`.
-
-    Based on DeskStatus Pydantic model from netlink-webserver.
+class Desk(DataClassDictMixin):
+    """Full desk information from WebSocket `desk.state` event or REST API.
 
     Attributes
     ----------
-        height: Current height in cm
-        mode: Current operation mode
-        moving: Whether desk is currently moving
-        error: Error message if any
-        target: Target height if a move is in progress
-        beep: Beep setting ("on" or "off", if available)
-        capabilities: Desk capabilities (optional)
-        inventory: Desk inventory info (optional)
+        capabilities: Desk capabilities dict (supports + attributes)
+        inventory: Desk inventory metadata
+        state: Nested current state values (height, mode, moving, target, beep, error)
 
     """
 
-    height: float
-    mode: str
-    moving: bool
-    error: str | None = None
-    target: float | None = None
-    beep: str | None = None
-    capabilities: dict[str, Any] | None = None
-    inventory: dict[str, Any] | None = None
+    capabilities: dict[str, Any]
+    inventory: dict[str, Any]
+    state: DeskState
+
+    def __post_init__(self) -> None:
+        """Convert state dict to DeskState if needed."""
+        if isinstance(self.state, dict):
+            object.__setattr__(self, "state", DeskState.from_dict(self.state))

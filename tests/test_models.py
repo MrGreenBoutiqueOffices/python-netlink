@@ -10,10 +10,11 @@ from syrupy.assertion import SnapshotAssertion
 
 from pynetlink.models import (
     BrowserState,
+    Desk,
     DeskState,
-    DeskStatus,
     DeviceInfo,
-    MonitorState,
+    Display,
+    DisplayState,
     NetlinkDevice,
 )
 
@@ -30,8 +31,6 @@ def test_desk_state_from_dict(snapshot: SnapshotAssertion) -> None:
     assert desk_state.moving is False
     assert desk_state.error is None
     assert desk_state.target is None
-    assert desk_state.capabilities is not None
-    assert desk_state.inventory is not None
 
     # Snapshot test for serialization
     assert desk_state.to_dict() == snapshot
@@ -65,49 +64,48 @@ def test_desk_state_validation(snapshot: SnapshotAssertion) -> None:
         )
 
 
-def test_desk_status_from_dict(snapshot: SnapshotAssertion) -> None:
-    """Test DeskStatus deserialization from REST API."""
+def test_desk_from_dict(snapshot: SnapshotAssertion) -> None:
+    """Test Desk deserialization from REST API."""
     data = json.loads(load_fixtures("desk_status_rest.json"))
-    desk_status = DeskStatus.from_dict(data)
+    desk = Desk.from_dict(data)
 
-    assert desk_status.height == 95.0
-    assert desk_status.mode == "stopped"
-    assert desk_status.moving is False
-    assert desk_status.error is None
-    assert desk_status.target == 110.0
-    assert desk_status.beep == "on"
-    assert desk_status.capabilities is not None
-    assert desk_status.inventory is not None
-
-    # Snapshot test
-    assert desk_status.to_dict() == snapshot
-
-
-def test_monitor_state_from_dict(snapshot: SnapshotAssertion) -> None:
-    """Test MonitorState deserialization from WebSocket data."""
-    data = json.loads(load_fixtures("monitor_state.json"))
-    monitor_state = MonitorState.from_dict(data)
-
-    assert monitor_state.bus == 20
-    assert monitor_state.power == "on"
-    assert monitor_state.source == "HDMI1"
-    assert monitor_state.brightness == 72
-    assert monitor_state.volume == 50
-    assert monitor_state.model == "Dell U2723QE"
-    assert monitor_state.type == "monitor"
-    assert monitor_state.sn == "ABC123XYZ"
-    assert monitor_state.supports is not None
-    assert monitor_state.source_options is not None
+    assert desk.state.height == 95.0
+    assert desk.state.mode == "stopped"
+    assert desk.state.moving is False
+    assert desk.state.error is None
+    assert desk.state.target == 110.0
+    assert desk.state.beep == "on"
+    assert desk.capabilities is not None
+    assert desk.inventory is not None
 
     # Snapshot test
-    assert monitor_state.to_dict() == snapshot
+    assert desk.to_dict() == snapshot
 
 
-def test_monitor_state_validation(snapshot: SnapshotAssertion) -> None:
-    """Test MonitorState brightness and volume validation."""
+def test_display_state_from_dict(snapshot: SnapshotAssertion) -> None:
+    """Test Display deserialization from WebSocket data."""
+    data = json.loads(load_fixtures("display_state.json"))
+    display_state = Display.from_dict(data)
+
+    assert display_state.bus == 20
+    assert display_state.state.power == "on"
+    assert display_state.state.source == "HDMI1"
+    assert display_state.state.brightness == 72
+    assert display_state.state.volume == 50
+    assert display_state.model == "Dell U2723QE"
+    assert display_state.type == "monitor"
+    assert display_state.serial_number == "ABC123XYZ"
+    assert display_state.supports is not None
+    assert display_state.source_options is not None
+
+    # Snapshot test
+    assert display_state.to_dict() == snapshot
+
+
+def test_display_state_validation(snapshot: SnapshotAssertion) -> None:
+    """Test DisplayState brightness and volume validation."""
     # Valid brightness and volume
-    valid_state = MonitorState(
-        bus=20,
+    valid_state = DisplayState(
         power="on",
         brightness=50,
         volume=50,
@@ -118,45 +116,53 @@ def test_monitor_state_validation(snapshot: SnapshotAssertion) -> None:
 
     # Invalid brightness - too low
     with pytest.raises(ValueError, match="Brightness must be 0-100"):
-        MonitorState(
-            bus=20,
+        DisplayState(
             power="on",
             brightness=-10,
         )
 
     # Invalid brightness - too high
     with pytest.raises(ValueError, match="Brightness must be 0-100"):
-        MonitorState(
-            bus=20,
+        DisplayState(
             power="on",
             brightness=150,
         )
 
     # Invalid volume - too low
     with pytest.raises(ValueError, match="Volume must be 0-100"):
-        MonitorState(
-            bus=20,
+        DisplayState(
             power="on",
             volume=-5,
         )
 
     # Invalid volume - too high
     with pytest.raises(ValueError, match="Volume must be 0-100"):
-        MonitorState(
-            bus=20,
+        DisplayState(
             power="on",
             volume=110,
         )
 
 
-def test_monitor_state_bus_int_or_str(snapshot: SnapshotAssertion) -> None:
-    """Test MonitorState accepts both int and str for bus_id."""
+def test_display_state_bus_int_or_str(snapshot: SnapshotAssertion) -> None:
+    """Test Display accepts both int and str for bus_id."""
     # Bus as int
-    state_int = MonitorState(bus=20, power="on")
+    state_int = Display(
+        bus=20,
+        model="Test",
+        type="monitor",
+        supports={},
+        state=DisplayState(power="on"),
+    )
     assert state_int.bus == 20
 
     # Bus as str
-    state_str = MonitorState(bus="20", power="on")
+    state_str = Display(
+        bus="20",
+        model="Test",
+        type="monitor",
+        supports={},
+        state=DisplayState(power="on"),
+    )
     assert state_str.bus == "20"
     assert {"int": state_int.to_dict(), "str": state_str.to_dict()} == snapshot
 
@@ -198,7 +204,7 @@ def test_netlink_device_from_zeroconf(snapshot: SnapshotAssertion) -> None:
         version="1.2.3",
         api_version="1.0",
         has_desk=True,
-        monitors=["20", "21"],
+        displays=["20", "21"],
         ws_path="/socket.io",
     )
 
@@ -210,7 +216,7 @@ def test_netlink_device_from_zeroconf(snapshot: SnapshotAssertion) -> None:
     assert device.version == "1.2.3"
     assert device.api_version == "1.0"
     assert device.has_desk is True
-    assert device.monitors == ["20", "21"]
+    assert device.displays == ["20", "21"]
     assert device.ws_path == "/socket.io"
     assert asdict(device) == snapshot
 
@@ -229,24 +235,51 @@ def test_desk_state_optional_fields(snapshot: SnapshotAssertion) -> None:
     assert desk_state.to_dict() == snapshot
     assert desk_state.error is None
     assert desk_state.target is None
-    assert desk_state.capabilities is None
-    assert desk_state.inventory is None
 
 
-def test_monitor_state_optional_fields() -> None:
-    """Test MonitorState with minimal required fields."""
-    monitor_state = MonitorState(
+def test_display_state_optional_fields() -> None:
+    """Test Display with minimal required fields."""
+    display_state = Display(
         bus=20,
-        power="on",
+        model="Test",
+        type="monitor",
+        supports={},
+        state=DisplayState(power="on"),
     )
 
-    assert monitor_state.bus == 20
-    assert monitor_state.power == "on"
-    assert monitor_state.source is None
-    assert monitor_state.brightness is None
-    assert monitor_state.volume is None
-    assert monitor_state.model is None
-    assert monitor_state.type is None
-    assert monitor_state.sn is None
-    assert monitor_state.supports is None
-    assert monitor_state.source_options is None
+    assert display_state.bus == 20
+    assert display_state.state.power == "on"
+    assert display_state.state.source is None
+    assert display_state.state.brightness is None
+    assert display_state.state.volume is None
+    assert display_state.model == "Test"
+    assert display_state.type == "monitor"
+    assert display_state.serial_number is None
+    assert not display_state.supports
+    assert display_state.source_options is None
+
+
+def test_state_dict_conversion() -> None:
+    """Test Desk and Display convert dict state to typed state in __post_init__."""
+    # Test Desk converts dict to DeskState
+    desk = Desk(
+        capabilities={},
+        inventory={},
+        state={"height": 75.0, "mode": "idle", "moving": False},  # type: ignore[arg-type]
+    )
+    assert isinstance(desk.state, DeskState)
+    assert desk.state.height == 75.0
+    assert desk.state.mode == "idle"
+    assert desk.state.moving is False
+
+    # Test Display converts dict to DisplayState
+    display = Display(
+        bus=20,
+        model="Test",
+        type="monitor",
+        supports={},
+        state={"power": "on", "brightness": 75},  # type: ignore[arg-type]
+    )
+    assert isinstance(display.state, DisplayState)
+    assert display.state.power == "on"
+    assert display.state.brightness == 75

@@ -4,33 +4,37 @@
     'url': 'https://example.com',
   })
 # ---
+# name: test_desk_from_dict
+  dict({
+    'capabilities': dict({
+      'supports': dict({
+        'beep': True,
+        'height': True,
+        'stop': True,
+      }),
+    }),
+    'inventory': dict({
+      'controllers': list([
+        dict({
+          'type': 'desk',
+        }),
+      ]),
+    }),
+    'state': dict({
+      'beep': 'on',
+      'error': None,
+      'height': 95.0,
+      'mode': 'stopped',
+      'moving': False,
+      'target': 110.0,
+    }),
+  })
+# ---
 # name: test_desk_state_from_dict
   dict({
     'beep': None,
-    'capabilities': dict({
-      'has_presets': True,
-      'max_height': 127.0,
-      'min_height': 62.0,
-    }),
     'error': None,
     'height': 75.0,
-    'inventory': dict({
-      'manufacturer': 'Linak',
-      'model': 'DPG1C',
-      'serial': '12345',
-    }),
-    'mode': 'idle',
-    'moving': False,
-    'target': None,
-  })
-# ---
-# name: test_desk_state_validation
-  dict({
-    'beep': None,
-    'capabilities': None,
-    'error': None,
-    'height': 75.0,
-    'inventory': None,
     'mode': 'idle',
     'moving': False,
     'target': None,
@@ -39,103 +43,21 @@
 # name: test_desk_state_optional_fields
   dict({
     'beep': None,
-    'capabilities': None,
     'error': None,
     'height': 75.0,
-    'inventory': None,
     'mode': 'idle',
     'moving': False,
     'target': None,
   })
 # ---
-# name: test_desk_status_from_dict
+# name: test_desk_state_validation
   dict({
-    'beep': 'on',
-    'capabilities': dict({
-      'supports': dict({
-        'beep': True,
-        'height': True,
-        'stop': True,
-      }),
-    }),
+    'beep': None,
     'error': None,
-    'height': 95.0,
-    'inventory': dict({
-      'controllers': list([
-        dict({
-          'type': 'desk',
-        }),
-      ]),
-    }),
-    'mode': 'stopped',
+    'height': 75.0,
+    'mode': 'idle',
     'moving': False,
-    'target': 110.0,
-  })
-# ---
-# name: test_monitor_state_from_dict
-  dict({
-    'brightness': 72,
-    'bus': 20,
-    'model': 'Dell U2723QE',
-    'power': 'on',
-    'sn': 'ABC123XYZ',
-    'source': 'HDMI1',
-    'source_options': list([
-      'HDMI1',
-      'HDMI2',
-      'USBC',
-      'DP',
-    ]),
-    'supports': dict({
-      'brightness': True,
-      'power': True,
-      'source': True,
-      'volume': True,
-    }),
-    'type': 'monitor',
-    'volume': 50,
-  })
-# ---
-# name: test_monitor_state_validation
-  dict({
-    'brightness': 50,
-    'bus': 20,
-    'model': None,
-    'power': 'on',
-    'sn': None,
-    'source': None,
-    'source_options': None,
-    'supports': None,
-    'type': None,
-    'volume': 50,
-  })
-# ---
-# name: test_monitor_state_bus_int_or_str
-  dict({
-    'int': dict({
-      'brightness': None,
-      'bus': 20,
-      'model': None,
-      'power': 'on',
-      'sn': None,
-      'source': None,
-      'source_options': None,
-      'supports': None,
-      'type': None,
-      'volume': None,
-    }),
-    'str': dict({
-      'brightness': None,
-      'bus': '20',
-      'model': None,
-      'power': 'on',
-      'sn': None,
-      'source': None,
-      'source_options': None,
-      'supports': None,
-      'type': None,
-      'volume': None,
-    }),
+    'target': None,
   })
 # ---
 # name: test_device_info_from_dict
@@ -147,18 +69,90 @@
     'version': '1.2.3',
   })
 # ---
+# name: test_display_state_bus_int_or_str
+  dict({
+    'int': dict({
+      'bus': 20,
+      'model': 'Test',
+      'serial_number': None,
+      'source_options': None,
+      'state': dict({
+        'brightness': None,
+        'error': None,
+        'power': 'on',
+        'source': None,
+        'volume': None,
+      }),
+      'supports': dict({
+      }),
+      'type': 'monitor',
+    }),
+    'str': dict({
+      'bus': '20',
+      'model': 'Test',
+      'serial_number': None,
+      'source_options': None,
+      'state': dict({
+        'brightness': None,
+        'error': None,
+        'power': 'on',
+        'source': None,
+        'volume': None,
+      }),
+      'supports': dict({
+      }),
+      'type': 'monitor',
+    }),
+  })
+# ---
+# name: test_display_state_from_dict
+  dict({
+    'bus': 20,
+    'model': 'Dell U2723QE',
+    'serial_number': 'ABC123XYZ',
+    'source_options': list([
+      'HDMI1',
+      'HDMI2',
+      'USBC',
+      'DP',
+    ]),
+    'state': dict({
+      'brightness': 72,
+      'error': None,
+      'power': 'on',
+      'source': 'HDMI1',
+      'volume': 50,
+    }),
+    'supports': dict({
+      'brightness': True,
+      'power': True,
+      'source': True,
+      'volume': True,
+    }),
+    'type': 'monitor',
+  })
+# ---
+# name: test_display_state_validation
+  dict({
+    'brightness': 50,
+    'error': None,
+    'power': 'on',
+    'source': None,
+    'volume': 50,
+  })
+# ---
 # name: test_netlink_device_from_zeroconf
   dict({
     'api_version': '1.0',
     'device_id': 'abc123',
     'device_name': 'Office Desk 1',
-    'has_desk': True,
-    'host': '192.168.1.100',
-    'model': 'netlink-v2',
-    'monitors': list([
+    'displays': list([
       '20',
       '21',
     ]),
+    'has_desk': True,
+    'host': '192.168.1.100',
+    'model': 'netlink-v2',
     'port': 80,
     'version': '1.2.3',
     'ws_path': '/socket.io',

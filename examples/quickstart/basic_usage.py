@@ -21,14 +21,20 @@ async def main() -> None:
 
         @client.on("desk.state")
         async def on_desk_state(data: dict) -> None:
-            print(f"Desk state update: height={data['height']}cm, mode={data['mode']}")
-
-        @client.on("monitor.state")
-        async def on_monitor_state(data: dict) -> None:
+            state = data.get("state", data)
             print(
-                f"Monitor {data['bus']}: power={data.get('power')}, "
-                f"brightness={data.get('brightness')}"
+                f"Desk state update: height={state['height']}cm, mode={state['mode']}"
             )
+
+        @client.on("display.state")
+        async def on_display_state(_data: dict) -> None:
+            # Use client.displays for parsed Display objects
+            for bus_id, display in client.displays.items():
+                print(
+                    f"Display {bus_id} ({display.model}): "
+                    f"power={display.state.power}, "
+                    f"brightness={display.state.brightness}"
+                )
 
         @client.on("device.info")
         async def on_device_info(data: dict) -> None:
@@ -50,8 +56,8 @@ async def main() -> None:
             print(f"Device version: {client.device_info.version}")
 
         print("\nFetching desk status via REST API...")
-        desk_status = await client.get_desk_status()
-        print(f"Desk height: {desk_status.height} cm")
+        desk = await client.get_desk_status()
+        print(f"Desk height: {desk.state.height} cm")
 
         print("\nFetching device info via REST API...")
         device_info = await client.get_device_info()
@@ -61,19 +67,19 @@ async def main() -> None:
         response = await client.set_desk_height(110.0)
         print(f"Response: {response}")
 
-        print("\nFetching monitors...")
-        monitors = await client.get_monitors()
-        for monitor in monitors:
-            print(f"  - Monitor {monitor.id}: {monitor.model} on bus {monitor.bus}")
+        print("\nFetching displays...")
+        displays = await client.get_displays()
+        for display in displays:
+            print(f"  - Display {display.id}: {display.model} on bus {display.bus}")
 
-        if monitors:
-            bus_id = monitors[0].bus
-            print(f"\nControlling monitor on bus {bus_id}...")
+        if displays:
+            bus_id = displays[0].bus
+            print(f"\nControlling display on bus {bus_id}...")
 
-            await client.set_monitor_brightness(bus_id, 80)
+            await client.set_display_brightness(bus_id, 80)
             print("Brightness set to 80")
 
-            await client.set_monitor_power(bus_id, "on")
+            await client.set_display_power(bus_id, "on")
             print("Power set to ON")
 
         print("\nListening for events (10 seconds)...")
