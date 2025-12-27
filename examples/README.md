@@ -4,6 +4,7 @@ Complete usage examples for the `pynetlink` library.
 
 ## Table of Contents
 
+- [Setup](#setup)
 - [Quick Start](#quick-start)
 - [Example Files](#example-files)
 - [Device Discovery](#device-discovery)
@@ -13,6 +14,30 @@ Complete usage examples for the `pynetlink` library.
 - [Browser Control](#browser-control)
 - [Error Handling](#error-handling)
 - [Advanced Usage](#advanced-usage)
+
+---
+
+## Setup
+
+Before running the examples, configure your Netlink device credentials:
+
+1. Copy the example environment file:
+   ```bash
+   cp examples/.env.example examples/.env
+   ```
+
+2. Edit `examples/.env` and add your device details:
+   ```bash
+   NETLINK_HOST=192.168.1.100
+   NETLINK_TOKEN=your-actual-token-here
+   ```
+
+3. Install dependencies (if running examples locally):
+   ```bash
+   poetry install
+   ```
+
+All examples will automatically load credentials from the `.env` file.
 
 ---
 
