@@ -394,13 +394,13 @@ class NetlinkClient:
             if self._ws.connected:
                 return await self._ws.send_command(
                     "command.display.power",
-                    {"bus": str(bus_id), "state": state},
+                    {"bus": str(bus_id), "attr": "power", "value": state},
                 )
             return await self._rest.set_display_power(bus_id, state)
         if transport == "websocket":
             return await self._ws.send_command(
                 "command.display.power",
-                {"bus": str(bus_id), "state": state},
+                {"bus": str(bus_id), "attr": "power", "value": state},
             )
         return await self._rest.set_display_power(bus_id, state)
 
@@ -427,13 +427,13 @@ class NetlinkClient:
             if self._ws.connected:
                 return await self._ws.send_command(
                     "command.display.brightness",
-                    {"bus": str(bus_id), "brightness": brightness},
+                    {"bus": str(bus_id), "attr": "brightness", "value": brightness},
                 )
             return await self._rest.set_display_brightness(bus_id, brightness)
         if transport == "websocket":
             return await self._ws.send_command(
                 "command.display.brightness",
-                {"bus": str(bus_id), "brightness": brightness},
+                {"bus": str(bus_id), "attr": "brightness", "value": brightness},
             )
         return await self._rest.set_display_brightness(bus_id, brightness)
 
@@ -460,13 +460,13 @@ class NetlinkClient:
             if self._ws.connected:
                 return await self._ws.send_command(
                     "command.display.volume",
-                    {"bus": str(bus_id), "volume": volume},
+                    {"bus": str(bus_id), "attr": "volume", "value": volume},
                 )
             return await self._rest.set_display_volume(bus_id, volume)
         if transport == "websocket":
             return await self._ws.send_command(
                 "command.display.volume",
-                {"bus": str(bus_id), "volume": volume},
+                {"bus": str(bus_id), "attr": "volume", "value": volume},
             )
         return await self._rest.set_display_volume(bus_id, volume)
 
@@ -493,13 +493,13 @@ class NetlinkClient:
             if self._ws.connected:
                 return await self._ws.send_command(
                     "command.display.source",
-                    {"bus": str(bus_id), "source": source},
+                    {"bus": str(bus_id), "attr": "source", "value": source},
                 )
             return await self._rest.set_display_source(bus_id, source)
         if transport == "websocket":
             return await self._ws.send_command(
                 "command.display.source",
-                {"bus": str(bus_id), "source": source},
+                {"bus": str(bus_id), "attr": "source", "value": source},
             )
         return await self._rest.set_display_source(bus_id, source)
 
