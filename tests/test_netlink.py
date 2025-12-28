@@ -575,7 +575,7 @@ async def test_client_set_display_power_auto_websocket() -> None:
         await client.set_display_power(bus_id=1, state="off")
         mock_send.assert_called_once_with(
             "command.display.power",
-            {"bus": "1", "state": "off"},
+            {"bus": "1", "attr": "power", "value": "off"},
         )
 
 
@@ -648,7 +648,7 @@ async def test_client_set_display_brightness_websocket_transport() -> None:
         )
         mock_send.assert_called_once_with(
             "command.display.brightness",
-            {"bus": "2", "brightness": 70},
+            {"bus": "2", "attr": "brightness", "value": 70},
         )
 
 
@@ -721,7 +721,7 @@ async def test_client_set_display_volume_auto_websocket() -> None:
         await client.set_display_volume(bus_id=3, volume=30)
         mock_send.assert_called_once_with(
             "command.display.volume",
-            {"bus": "3", "volume": 30},
+            {"bus": "3", "attr": "volume", "value": 30},
         )
 
 
@@ -770,7 +770,7 @@ async def test_client_set_display_volume_websocket() -> None:
         )
         mock_send.assert_called_once_with(
             "command.display.volume",
-            {"bus": "1", "volume": 40},
+            {"bus": "1", "attr": "volume", "value": 40},
         )
 
 
@@ -812,7 +812,7 @@ async def test_client_set_display_source_auto_websocket() -> None:
         await client.set_display_source(bus_id=4, source="DP")
         mock_send.assert_called_once_with(
             "command.display.source",
-            {"bus": "4", "source": "DP"},
+            {"bus": "4", "attr": "source", "value": "DP"},
         )
 
 
@@ -1296,7 +1296,7 @@ async def test_client_set_display_power_websocket() -> None:
         await client.set_display_power(bus_id=0, state="on", transport="websocket")
         mock_send.assert_called_once_with(
             "command.display.power",
-            {"bus": "0", "state": "on"},
+            {"bus": "0", "attr": "power", "value": "on"},
         )
 
 
@@ -1314,7 +1314,7 @@ async def test_client_set_display_brightness_auto() -> None:
         await client.set_display_brightness(bus_id=0, brightness=80)
         mock_send.assert_called_once_with(
             "command.display.brightness",
-            {"bus": "0", "brightness": 80},
+            {"bus": "0", "attr": "brightness", "value": 80},
         )
 
 
@@ -1336,7 +1336,7 @@ async def test_client_set_display_source_websocket() -> None:
         )
         mock_send.assert_called_once_with(
             "command.display.source",
-            {"bus": "2", "source": "USBC"},
+            {"bus": "2", "attr": "source", "value": "USBC"},
         )
 
 
