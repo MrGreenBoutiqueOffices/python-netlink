@@ -12,6 +12,7 @@ from .exceptions import (
     NetlinkAuthenticationError,
     NetlinkCommandError,
     NetlinkConnectionError,
+    NetlinkDataError,
     NetlinkError,
     NetlinkTimeoutError,
 )
@@ -50,6 +51,7 @@ __all__ = [
     "NetlinkClient",
     "NetlinkCommandError",
     "NetlinkConnectionError",
+    "NetlinkDataError",
     "NetlinkDevice",
     "NetlinkError",
     "NetlinkTimeoutError",

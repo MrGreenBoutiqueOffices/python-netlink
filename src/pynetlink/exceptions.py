@@ -40,3 +40,7 @@ class NetlinkCommandError(NetlinkError):
         super().__init__(message)
         self.command = command
         self.error_details = error_details
+
+
+class NetlinkDataError(NetlinkError):
+    """Invalid or incomplete data received from device."""

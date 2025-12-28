@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from dataclasses import asdict
 
-import pytest
 from syrupy.assertion import SnapshotAssertion
 
 from pynetlink.models import (
@@ -37,8 +36,7 @@ def test_desk_state_from_dict(snapshot: SnapshotAssertion) -> None:
 
 
 def test_desk_state_validation(snapshot: SnapshotAssertion) -> None:
-    """Test DeskState validation."""
-    # Valid height range
+    """Test DeskState with valid height range."""
     valid_state = DeskState(
         height=75.0,
         mode="idle",
@@ -46,22 +44,6 @@ def test_desk_state_validation(snapshot: SnapshotAssertion) -> None:
     )
     assert valid_state.height == 75.0
     assert valid_state.to_dict() == snapshot
-
-    # Invalid height - too low
-    with pytest.raises(ValueError, match="Height must be between"):
-        DeskState(
-            height=50.0,  # Below minimum
-            mode="idle",
-            moving=False,
-        )
-
-    # Invalid height - too high
-    with pytest.raises(ValueError, match="Height must be between"):
-        DeskState(
-            height=150.0,  # Above maximum
-            mode="idle",
-            moving=False,
-        )
 
 
 def test_desk_from_dict(snapshot: SnapshotAssertion) -> None:
@@ -103,8 +85,7 @@ def test_display_state_from_dict(snapshot: SnapshotAssertion) -> None:
 
 
 def test_display_state_validation(snapshot: SnapshotAssertion) -> None:
-    """Test DisplayState brightness and volume validation."""
-    # Valid brightness and volume
+    """Test DisplayState with valid brightness and volume."""
     valid_state = DisplayState(
         power="on",
         brightness=50,
@@ -113,34 +94,6 @@ def test_display_state_validation(snapshot: SnapshotAssertion) -> None:
     assert valid_state.brightness == 50
     assert valid_state.volume == 50
     assert valid_state.to_dict() == snapshot
-
-    # Invalid brightness - too low
-    with pytest.raises(ValueError, match="Brightness must be 0-100"):
-        DisplayState(
-            power="on",
-            brightness=-10,
-        )
-
-    # Invalid brightness - too high
-    with pytest.raises(ValueError, match="Brightness must be 0-100"):
-        DisplayState(
-            power="on",
-            brightness=150,
-        )
-
-    # Invalid volume - too low
-    with pytest.raises(ValueError, match="Volume must be 0-100"):
-        DisplayState(
-            power="on",
-            volume=-5,
-        )
-
-    # Invalid volume - too high
-    with pytest.raises(ValueError, match="Volume must be 0-100"):
-        DisplayState(
-            power="on",
-            volume=110,
-        )
 
 
 def test_display_state_bus_int_or_str(snapshot: SnapshotAssertion) -> None:

@@ -6,6 +6,9 @@ from dataclasses import dataclass
 from typing import Any
 
 from mashumaro import DataClassDictMixin
+from mashumaro.exceptions import InvalidFieldValue, MissingField
+
+from pynetlink.exceptions import NetlinkDataError
 
 
 @dataclass
@@ -65,7 +68,11 @@ class Display(DataClassDictMixin):
     def __post_init__(self) -> None:
         """Convert state dict to DisplayState if needed."""
         if isinstance(self.state, dict):
-            object.__setattr__(self, "state", DisplayState.from_dict(self.state))
+            try:
+                object.__setattr__(self, "state", DisplayState.from_dict(self.state))
+            except (MissingField, InvalidFieldValue) as exc:
+                msg = f"Incomplete or invalid display state data: {exc}"
+                raise NetlinkDataError(msg) from exc
 
 
 @dataclass

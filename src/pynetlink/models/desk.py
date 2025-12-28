@@ -6,6 +6,9 @@ from dataclasses import dataclass
 from typing import Any
 
 from mashumaro import DataClassDictMixin
+from mashumaro.exceptions import InvalidFieldValue, MissingField
+
+from pynetlink.exceptions import NetlinkDataError
 
 
 @dataclass
@@ -56,4 +59,8 @@ class Desk(DataClassDictMixin):
     def __post_init__(self) -> None:
         """Convert state dict to DeskState if needed."""
         if isinstance(self.state, dict):
-            object.__setattr__(self, "state", DeskState.from_dict(self.state))
+            try:
+                object.__setattr__(self, "state", DeskState.from_dict(self.state))
+            except (MissingField, InvalidFieldValue) as exc:
+                msg = f"Incomplete or invalid desk state data: {exc}"
+                raise NetlinkDataError(msg) from exc
