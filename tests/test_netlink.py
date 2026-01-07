@@ -119,6 +119,7 @@ async def test_client_device_info_property() -> None:
     # Should return cached state
     assert client.device_info is not None
     assert client.device_info.device_name == "Office Desk 1"
+    assert client.device_info.mac_address == "00:11:22:33:44:55"
     assert client.device_info.model == "NetOS Desk"
 
 

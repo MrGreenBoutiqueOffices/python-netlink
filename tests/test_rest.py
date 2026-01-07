@@ -40,6 +40,7 @@ async def test_device_get_info(aresponses: ResponsesMockServer) -> None:
         info = await rest.get_device_info()
 
         assert info.device_id == "abc123def456"
+        assert info.mac_address == "00:11:22:33:44:55"
         assert info.model == "NetOS Desk"
 
 

@@ -18,6 +18,7 @@ class DeviceInfo(DataClassDictMixin):
         version: Netlink software version
         api_version: API version
         model: Device model (e.g., "NetOS Desk")
+        mac_address: Device MAC address
 
     """
 
@@ -26,6 +27,7 @@ class DeviceInfo(DataClassDictMixin):
     version: str
     api_version: str
     model: str
+    mac_address: str | None = None
 
 
 @dataclass
