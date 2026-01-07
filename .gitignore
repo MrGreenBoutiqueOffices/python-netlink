@@ -125,7 +125,3 @@ venv.bak/
 
 # Pyre type checker
 .pyre/
-
-setup.py
-.python-version
-docs/*

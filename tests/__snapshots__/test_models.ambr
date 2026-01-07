@@ -65,6 +65,7 @@
     'api_version': '1.0',
     'device_id': 'abc123def456',
     'device_name': 'Office Desk 1',
+    'mac_address': '00:11:22:33:44:55',
     'model': 'NetOS Desk',
     'version': '1.2.3',
   })

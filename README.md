@@ -95,9 +95,9 @@ The examples folder contains comprehensive guides for:
 from pynetlink import NetlinkClient
 
 # Auto-discover devices on network
-devices = await NetlinkClient.discover_devices(timeout=5.0)
+devices = await NetlinkClient.discover_devices(discovery_timeout=5.0)
 for device in devices:
-    print(f"Found: {device.name} at {device.host}")
+    print(f"Found: {device.device_name} at {device.host}")
 ```
 
 ### Real-time Events

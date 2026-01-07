@@ -139,6 +139,7 @@ def test_device_info_from_dict(snapshot: SnapshotAssertion) -> None:
     assert device_info.version == "1.2.3"
     assert device_info.api_version == "1.0"
     assert device_info.device_id == "abc123def456"
+    assert device_info.mac_address == "00:11:22:33:44:55"
     assert device_info.device_name == "Office Desk 1"
     assert device_info.model == "NetOS Desk"
 
