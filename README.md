@@ -216,7 +216,7 @@ This project is licensed under the GNU Lesser General Public License v3.0 or lat
 [downloads-url]: https://pypistats.org/packages/pynetlink
 [last-commit-shield]: https://img.shields.io/github/last-commit/MrGreenBoutiqueOffices/python-netlink.svg
 [license-shield]: https://img.shields.io/github/license/MrGreenBoutiqueOffices/python-netlink.svg
-[maintenance-shield]: https://img.shields.io/maintenance/yes/2025.svg
+[maintenance-shield]: https://img.shields.io/maintenance/yes/2026.svg
 [project-stage-shield]: https://img.shields.io/badge/project%20stage-production%20ready-brightgreen.svg
 [pypi]: https://pypi.org/project/pynetlink/
 [python-versions-shield]: https://img.shields.io/pypi/pyversions/pynetlink
