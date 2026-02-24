@@ -26,16 +26,16 @@ class DeskState(DataClassDictMixin):
 
     """
 
-    height: float
     mode: str
     moving: bool
+    height: float | None = None
     error: str | None = None
     target: float | None = None
     beep: str | None = None
 
     def __post_init__(self) -> None:
         """Validate height range."""
-        if not 60.0 <= self.height <= 130.0:
+        if self.height is not None and not 60.0 <= self.height <= 130.0:
             msg = f"Height must be between 60 and 130 cm, got {self.height}"
             raise ValueError(msg)
 
