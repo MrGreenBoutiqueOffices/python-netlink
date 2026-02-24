@@ -213,6 +213,41 @@ def test_display_state_optional_fields() -> None:
     assert display_state.source_options is None
 
 
+def test_desk_state_offline() -> None:
+    """Test DeskState handles offline/error state without height."""
+    data = {
+        "beep": "on",
+        "error": "No communication with desk",
+        "mode": "offline",
+        "moving": False,
+    }
+    desk_state = DeskState.from_dict(data)
+
+    assert desk_state.height is None
+    assert desk_state.mode == "offline"
+    assert desk_state.moving is False
+    assert desk_state.error == "No communication with desk"
+
+
+def test_desk_offline_via_desk_from_dict() -> None:
+    """Test that Desk.from_dict handles an offline state payload."""
+    data = {
+        "capabilities": {},
+        "inventory": {},
+        "state": {
+            "beep": "on",
+            "error": "No communication with desk",
+            "mode": "offline",
+            "moving": False,
+        },
+    }
+    desk = Desk.from_dict(data)
+
+    assert desk.state.height is None
+    assert desk.state.mode == "offline"
+    assert desk.state.error == "No communication with desk"
+
+
 def test_state_dict_conversion() -> None:
     """Test Desk and Display convert dict state to typed state in __post_init__."""
     # Test Desk converts dict to DeskState
