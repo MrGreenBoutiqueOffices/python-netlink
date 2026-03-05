@@ -457,8 +457,8 @@ Control the browser container (if available on your Netlink device):
 async def get_url() -> None:
     """Get current browser URL."""
     async with NetlinkClient(host, token) as client:
-        url = await client.get_browser_url()
-        print(f"Current URL: {url}")
+        status = await client.get_browser_status()
+        print(f"Current URL: {status.url}")
 ```
 
 ### Navigate to URL

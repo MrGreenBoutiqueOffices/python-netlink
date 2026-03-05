@@ -844,16 +844,16 @@ async def test_client_set_display_source_rest_transport(
         await client.set_display_source(bus_id=20, source="HDMI1", transport="rest")
 
 
-async def test_client_get_browser_url(aresponses: ResponsesMockServer) -> None:
-    """Test get_browser_url delegates to REST."""
+async def test_client_get_browser_status(aresponses: ResponsesMockServer) -> None:
+    """Test get_browser_status delegates to REST."""
     aresponses.add(
         "192.168.1.100",
-        "/api/v1/browser/url",
+        "/api/v1/browser/status",
         METH_GET,
         aresponses.Response(
             status=200,
             headers={"Content-Type": "application/json"},
-            text=load_fixtures("browser_url_response.json"),
+            text=load_fixtures("browser_state.json"),
         ),
     )
 
@@ -865,8 +865,8 @@ async def test_client_get_browser_url(aresponses: ResponsesMockServer) -> None:
         )
         client._rest._session = session
 
-        url = await client.get_browser_url()
-        assert url == "https://example.com"
+        status = await client.get_browser_status()
+        assert status.url == "https://example.com"
 
 
 async def test_client_set_browser_url(aresponses: ResponsesMockServer) -> None:

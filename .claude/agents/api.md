@@ -15,7 +15,7 @@ or endpoints change.
   `calibrate_desk()`, `set_desk_beep()`
 - Display: `get_displays()`, `get_display_status()`, `set_display_power()`,
   `set_display_brightness()`, `set_display_volume()`, `set_display_source()`
-- Browser: `get_browser_url()`, `set_browser_url()`, `refresh_browser()`
+- Browser: `get_browser_status()`, `set_browser_url()`, `refresh_browser()`
 - Discovery: `discover_devices(timeout=5.0)`
 
 ## Value Ranges
