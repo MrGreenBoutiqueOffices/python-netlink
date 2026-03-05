@@ -844,31 +844,6 @@ async def test_client_set_display_source_rest_transport(
         await client.set_display_source(bus_id=20, source="HDMI1", transport="rest")
 
 
-async def test_client_get_browser_url(aresponses: ResponsesMockServer) -> None:
-    """Test get_browser_url delegates to REST."""
-    aresponses.add(
-        "192.168.1.100",
-        "/api/v1/browser/url",
-        METH_GET,
-        aresponses.Response(
-            status=200,
-            headers={"Content-Type": "application/json"},
-            text=load_fixtures("browser_url_response.json"),
-        ),
-    )
-
-    async with ClientSession() as session:
-        client = NetlinkClient(
-            host="192.168.1.100",
-            token="test-token",
-            session=session,
-        )
-        client._rest._session = session
-
-        url = await client.get_browser_url()
-        assert url == "https://example.com"
-
-
 async def test_client_set_browser_url(aresponses: ResponsesMockServer) -> None:
     """Test set_browser_url delegates to REST."""
     aresponses.add(

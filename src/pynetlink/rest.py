@@ -429,16 +429,16 @@ class NetlinkREST:
         return await self._request(f"display/{bus_id}", method=METH_PATCH, json=kwargs)
 
     # Browser endpoints
-    async def get_browser_url(self) -> str:
-        """Get current browser URL.
+    async def get_browser_status(self) -> BrowserState:
+        """Get browser status.
 
         Returns
         -------
-            Current URL
+            Browser state with URL and status
 
         """
-        data = await self._request("browser/url")
-        return data.get("url", "")
+        data = await self._request("browser/status")
+        return BrowserState.from_dict(data)
 
     async def set_browser_url(self, url: str) -> dict[str, Any]:
         """Set browser URL.
@@ -453,17 +453,6 @@ class NetlinkREST:
 
         """
         return await self._request("browser/url", method=METH_POST, json={"url": url})
-
-    async def get_browser_status(self) -> BrowserState:
-        """Get browser status.
-
-        Returns
-        -------
-            Browser state with URL and status
-
-        """
-        data = await self._request("browser/status")
-        return BrowserState.from_dict(data)
 
     async def refresh_browser(self) -> dict[str, Any]:
         """Refresh browser page.

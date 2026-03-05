@@ -16,6 +16,7 @@ from .const import (
     EVENT_DISPLAY_STATE,
 )
 from .models import (
+    BrowserState,
     Desk,
     DeskState,
     DeviceInfo,
@@ -504,15 +505,15 @@ class NetlinkClient:
         return await self._rest.set_display_source(bus_id, source)
 
     # Browser control methods (delegate to REST)
-    async def get_browser_url(self) -> str:
-        """Get current browser URL.
+    async def get_browser_status(self) -> BrowserState:
+        """Get current browser status.
 
         Returns
         -------
-            Current URL
+            BrowserState with current URL
 
         """
-        return await self._rest.get_browser_url()
+        return await self._rest.get_browser_status()
 
     async def set_browser_url(
         self,

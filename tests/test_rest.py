@@ -490,27 +490,6 @@ async def test_browser_get_status(aresponses: ResponsesMockServer) -> None:
         assert status.url == "https://example.com"
 
 
-async def test_browser_get_url(aresponses: ResponsesMockServer) -> None:
-    """Test GET /api/v1/browser/url."""
-    aresponses.add(
-        "192.168.1.100",
-        "/api/v1/browser/url",
-        METH_GET,
-        aresponses.Response(
-            status=200,
-            headers={"Content-Type": "application/json"},
-            text=load_fixtures("browser_url_response.json"),
-        ),
-    )
-
-    async with ClientSession() as session:
-        rest = NetlinkREST(host="192.168.1.100", token="test-token")
-        rest._session = session
-        url = await rest.get_browser_url()
-
-        assert url == "https://example.com"
-
-
 async def test_browser_set_url(aresponses: ResponsesMockServer) -> None:
     """Test POST /api/v1/browser/url."""
     aresponses.add(
