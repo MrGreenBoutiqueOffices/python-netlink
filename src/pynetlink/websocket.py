@@ -136,7 +136,7 @@ class NetlinkWebSocket:
             with contextlib.suppress(asyncio.CancelledError):
                 await self._reconnect_task
 
-        if self._sio and self._connected:
+        if self._sio:
             await self._sio.disconnect()
             self._sio = None
             self._connected = False
@@ -255,7 +255,7 @@ class NetlinkWebSocket:
         self._pending_commands[command_id] = future
 
         # Build command payload
-        payload = {
+        payload: dict[str, Any] = {
             "type": command_type,
             "id": command_id,
         }
