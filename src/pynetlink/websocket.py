@@ -255,7 +255,7 @@ class NetlinkWebSocket:
         self._pending_commands[command_id] = future
 
         # Build command payload
-        payload = {
+        payload: dict[str, Any] = {
             "type": command_type,
             "id": command_id,
         }
