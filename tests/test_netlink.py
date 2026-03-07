@@ -867,6 +867,7 @@ async def test_client_get_browser_status(aresponses: ResponsesMockServer) -> Non
 
         status = await client.get_browser_status()
         assert status.url == "https://example.com"
+        assert status.default_url == "https://default.example.com"
 
 
 async def test_client_set_browser_url(aresponses: ResponsesMockServer) -> None:

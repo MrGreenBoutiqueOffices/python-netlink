@@ -33,6 +33,7 @@ async def main() -> None:
         status = await rest.get_browser_status()
         print("Browser status:")
         print(f"  URL: {status.url}")
+        print(f"  Default URL: {status.default_url}")
 
         await asyncio.sleep(2)
         print("Triggering browser refresh...")
