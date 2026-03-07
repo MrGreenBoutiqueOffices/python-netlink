@@ -1,3 +1,4 @@
 {
-  "url": "https://example.com"
+  "url": "https://example.com",
+  "default_url": "https://default.example.com"
 }

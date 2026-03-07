@@ -14,7 +14,9 @@ class BrowserState(DataClassDictMixin):
     Attributes
     ----------
         url: Current browser URL
+        default_url: Default browser URL
 
     """
 
     url: str
+    default_url: str | None = None
