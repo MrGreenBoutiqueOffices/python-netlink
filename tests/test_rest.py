@@ -488,6 +488,7 @@ async def test_browser_get_status(aresponses: ResponsesMockServer) -> None:
         status = await rest.get_browser_status()
 
         assert status.url == "https://example.com"
+        assert status.default_url == "https://default.example.com"
 
 
 async def test_browser_set_url(aresponses: ResponsesMockServer) -> None:
@@ -683,6 +684,7 @@ async def test_get_browser_status(aresponses: ResponsesMockServer) -> None:
         status = await rest.get_browser_status()
 
         assert status.url == "https://example.com"
+        assert status.default_url == "https://default.example.com"
 
 
 async def test_patch_display(aresponses: ResponsesMockServer) -> None:

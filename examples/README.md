@@ -459,6 +459,7 @@ async def get_url() -> None:
     async with NetlinkClient(host, token) as client:
         status = await client.get_browser_status()
         print(f"Current URL: {status.url}")
+        print(f"Default URL: {status.default_url}")
 ```
 
 ### Navigate to URL

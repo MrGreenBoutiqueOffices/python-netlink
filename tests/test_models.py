@@ -25,12 +25,6 @@ def test_desk_state_from_dict(snapshot: SnapshotAssertion) -> None:
     data = json.loads(load_fixtures("desk_state.json"))
     desk_state = DeskState.from_dict(data)
 
-    assert desk_state.height == 75.0
-    assert desk_state.mode == "idle"
-    assert desk_state.moving is False
-    assert desk_state.error is None
-    assert desk_state.target is None
-
     # Snapshot test for serialization
     assert desk_state.to_dict() == snapshot
 
@@ -51,15 +45,6 @@ def test_desk_from_dict(snapshot: SnapshotAssertion) -> None:
     data = json.loads(load_fixtures("desk_status_rest.json"))
     desk = Desk.from_dict(data)
 
-    assert desk.state.height == 95.0
-    assert desk.state.mode == "stopped"
-    assert desk.state.moving is False
-    assert desk.state.error is None
-    assert desk.state.target == 110.0
-    assert desk.state.beep == "on"
-    assert desk.capabilities is not None
-    assert desk.inventory is not None
-
     # Snapshot test
     assert desk.to_dict() == snapshot
 
@@ -68,17 +53,6 @@ def test_display_state_from_dict(snapshot: SnapshotAssertion) -> None:
     """Test Display deserialization from WebSocket data."""
     data = json.loads(load_fixtures("display_state.json"))
     display_state = Display.from_dict(data)
-
-    assert display_state.bus == 20
-    assert display_state.state.power == "on"
-    assert display_state.state.source == "HDMI1"
-    assert display_state.state.brightness == 72
-    assert display_state.state.volume == 50
-    assert display_state.model == "Dell U2723QE"
-    assert display_state.type == "monitor"
-    assert display_state.serial_number == "ABC123XYZ"
-    assert display_state.supports is not None
-    assert display_state.source_options is not None
 
     # Snapshot test
     assert display_state.to_dict() == snapshot
@@ -91,8 +65,6 @@ def test_display_state_validation(snapshot: SnapshotAssertion) -> None:
         brightness=50,
         volume=50,
     )
-    assert valid_state.brightness == 50
-    assert valid_state.volume == 50
     assert valid_state.to_dict() == snapshot
 
 
@@ -125,8 +97,6 @@ def test_browser_state_from_dict(snapshot: SnapshotAssertion) -> None:
     data = json.loads(load_fixtures("browser_state.json"))
     browser_state = BrowserState.from_dict(data)
 
-    assert browser_state.url == "https://example.com"
-
     # Snapshot test
     assert browser_state.to_dict() == snapshot
 
@@ -135,13 +105,6 @@ def test_device_info_from_dict(snapshot: SnapshotAssertion) -> None:
     """Test DeviceInfo deserialization."""
     data = json.loads(load_fixtures("device_info.json"))
     device_info = DeviceInfo.from_dict(data)
-
-    assert device_info.version == "1.2.3"
-    assert device_info.api_version == "1.0"
-    assert device_info.device_id == "abc123def456"
-    assert device_info.mac_address == "00:11:22:33:44:55"
-    assert device_info.device_name == "Office Desk 1"
-    assert device_info.model == "NetOS Desk"
 
     # Snapshot test
     assert device_info.to_dict() == snapshot
@@ -161,17 +124,6 @@ def test_netlink_device_from_zeroconf(snapshot: SnapshotAssertion) -> None:
         displays=["20", "21"],
         ws_path="/socket.io",
     )
-
-    assert device.host == "192.168.1.100"
-    assert device.port == 80
-    assert device.device_id == "abc123"
-    assert device.device_name == "Office Desk 1"
-    assert device.model == "netlink-v2"
-    assert device.version == "1.2.3"
-    assert device.api_version == "1.0"
-    assert device.has_desk is True
-    assert device.displays == ["20", "21"]
-    assert device.ws_path == "/socket.io"
     assert asdict(device) == snapshot
 
 
@@ -183,9 +135,6 @@ def test_desk_state_optional_fields(snapshot: SnapshotAssertion) -> None:
         moving=False,
     )
 
-    assert desk_state.height == 75.0
-    assert desk_state.mode == "idle"
-    assert desk_state.moving is False
     assert desk_state.to_dict() == snapshot
     assert desk_state.error is None
     assert desk_state.target is None
