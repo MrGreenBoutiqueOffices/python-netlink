@@ -939,3 +939,22 @@ async def test_websocket_command_ack_without_id() -> None:
 
     # Should complete without error
     assert True
+
+
+async def test_websocket_send_command_bad_namespace_error() -> None:
+    """Test send_command raises NetlinkConnectionError on BadNamespaceError."""
+    ws = NetlinkWebSocket(host="192.168.1.100", token="test-token")
+
+    with patch.object(socketio, "AsyncClient") as mock_client_class:
+        mock_sio = AsyncMock()
+        mock_client_class.return_value = mock_sio
+        mock_sio.on = MagicMock(return_value=lambda f: f)
+        mock_sio.emit = AsyncMock(
+            side_effect=socketio_exceptions.BadNamespaceError("disconnected")
+        )
+
+        await ws.connect()
+        assert ws.connected is True
+
+        with pytest.raises(NetlinkConnectionError, match="disconnected while sending"):
+            await ws.send_command("command.desk.height", {"height": 120.0})
