@@ -279,6 +279,12 @@ class NetlinkWebSocket:
             )
             raise NetlinkTimeoutError(msg) from err
 
+        except socketio_exceptions.BadNamespaceError as err:
+            # Race condition: connection dropped between the _connected check and emit.
+            self._pending_commands.pop(command_id, None)
+            msg = f"WebSocket disconnected while sending {command_type}"
+            raise NetlinkConnectionError(msg) from err
+
         except Exception:
             # Clean up pending command
             self._pending_commands.pop(command_id, None)
