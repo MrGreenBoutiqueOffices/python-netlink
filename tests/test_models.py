@@ -203,7 +203,7 @@ def test_state_dict_conversion() -> None:
     desk = Desk(
         capabilities={},
         inventory={},
-        state={"height": 75.0, "mode": "idle", "moving": False},  # type: ignore[arg-type]
+        state={"height": 75.0, "mode": "idle", "moving": False},  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
     )
     assert isinstance(desk.state, DeskState)
     assert desk.state.height == 75.0
@@ -216,7 +216,7 @@ def test_state_dict_conversion() -> None:
         model="Test",
         type="monitor",
         supports={},
-        state={"power": "on", "brightness": 75},  # type: ignore[arg-type]
+        state={"power": "on", "brightness": 75},  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
     )
     assert isinstance(display.state, DisplayState)
     assert display.state.power == "on"

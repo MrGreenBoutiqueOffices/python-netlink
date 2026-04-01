@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+from typing import Any
 from unittest.mock import AsyncMock
 
 import pytest
@@ -632,7 +633,7 @@ async def test_timeout_error() -> None:
 async def test_bearer_token_header(aresponses: ResponsesMockServer) -> None:
     """Test that Bearer token is sent in Authorization header."""
 
-    def check_auth_header(request: object) -> object:
+    def check_auth_header(request: Any) -> object:
         assert request.headers.get("Authorization") == "Bearer test-token-123"  # type: ignore[union-attr]
         return aresponses.Response(
             status=200,
