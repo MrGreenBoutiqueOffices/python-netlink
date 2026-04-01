@@ -15,7 +15,7 @@ def test_desk_invalid_state_raises_netlink_data_error() -> None:
         Desk(
             capabilities={},
             inventory={},
-            state={"height": 75.0},  # type: ignore[arg-type]  # Missing mode and moving
+            state={"height": 75.0},  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
         )
 
     # Invalid field types
@@ -23,7 +23,7 @@ def test_desk_invalid_state_raises_netlink_data_error() -> None:
         Desk(
             capabilities={},
             inventory={},
-            state={"height": "not-a-number", "mode": "idle", "moving": False},  # type: ignore[arg-type]
+            state={"height": "not-a-number", "mode": "idle", "moving": False},  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
         )
 
 
@@ -38,7 +38,7 @@ def test_display_invalid_state_raises_netlink_data_error() -> None:
             model="Test",
             type="monitor",
             supports={},
-            state={"power": "on", "brightness": "not-a-number"},  # type: ignore[arg-type]  # Invalid type
+            state={"power": "on", "brightness": "not-a-number"},  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
         )
 
 
