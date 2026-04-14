@@ -17,7 +17,14 @@ from .exceptions import (
     NetlinkConnectionError,
     NetlinkTimeoutError,
 )
-from .models import BrowserState, Desk, DeviceInfo, Display, DisplaySummary
+from .models import (
+    AccessCodes,
+    BrowserState,
+    Desk,
+    DeviceInfo,
+    Display,
+    DisplaySummary,
+)
 
 VERSION = metadata.version(__package__ or "pynetlink")
 
@@ -463,6 +470,12 @@ class NetlinkREST:
 
         """
         return await self._request("browser/refresh", method=METH_POST)
+
+    # Admin endpoints
+    async def get_access_codes(self) -> AccessCodes:
+        """Get current daily access codes for privileged admin clients."""
+        data = await self._request("admin/access-codes")
+        return AccessCodes.from_dict(data)
 
     async def close(self) -> None:
         """Close open client session."""

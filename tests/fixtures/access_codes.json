@@ -1,0 +1,14 @@
+{
+  "web_login": {
+    "code": "481926",
+    "valid_from": "2026-04-14T00:00:00+02:00",
+    "valid_until": "2026-04-15T00:00:00+02:00",
+    "timezone": "Europe/Amsterdam"
+  },
+  "signing_maintenance": {
+    "code": "481926",
+    "valid_from": "2026-04-14T00:00:00+02:00",
+    "valid_until": "2026-04-15T00:00:00+02:00",
+    "timezone": "Europe/Amsterdam"
+  }
+}

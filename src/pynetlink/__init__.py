@@ -17,6 +17,8 @@ from .exceptions import (
     NetlinkTimeoutError,
 )
 from .models import (
+    AccessCode,
+    AccessCodes,
     BrowserState,
     Desk,
     DeskState,
@@ -39,6 +41,8 @@ __all__ = [
     "EVENT_DISPLAYS_LIST",
     "EVENT_DISPLAY_STATE",
     "EVENT_SYSTEM_MQTT",
+    "AccessCode",
+    "AccessCodes",
     "BrowserState",
     "Desk",
     "DeskState",

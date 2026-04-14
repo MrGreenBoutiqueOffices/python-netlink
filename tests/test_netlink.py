@@ -211,6 +211,30 @@ async def test_client_get_device_info(aresponses: ResponsesMockServer) -> None:
         assert info.device_id == "abc123def456"
 
 
+async def test_client_get_access_codes(aresponses: ResponsesMockServer) -> None:
+    """Test get_access_codes delegates to REST."""
+    aresponses.add(
+        "192.168.1.100",
+        "/api/v1/admin/access-codes",
+        METH_GET,
+        aresponses.Response(
+            status=200,
+            headers={"Content-Type": "application/json"},
+            text=load_fixtures("access_codes.json"),
+        ),
+    )
+
+    async with ClientSession() as session:
+        client = NetlinkClient(
+            host="192.168.1.100", token="test-token", session=session
+        )
+        client._rest._session = session
+
+        codes = await client.get_access_codes()
+        assert codes.web_login.code == "481926"
+        assert codes.signing_maintenance.code == "481926"
+
+
 async def test_client_get_desk_status(aresponses: ResponsesMockServer) -> None:
     """Test get_desk_status delegates to REST."""
     aresponses.add(

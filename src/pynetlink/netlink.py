@@ -16,6 +16,7 @@ from .const import (
     EVENT_DISPLAY_STATE,
 )
 from .models import (
+    AccessCodes,
     BrowserState,
     Desk,
     DeskState,
@@ -559,6 +560,10 @@ class NetlinkClient:
         if transport == "websocket":
             return await self._ws.send_command("command.browser.refresh")
         return await self._rest.refresh_browser()
+
+    async def get_access_codes(self) -> AccessCodes:
+        """Get current daily access codes for privileged admin clients."""
+        return await self._rest.get_access_codes()
 
     # Discovery methods
     @staticmethod
