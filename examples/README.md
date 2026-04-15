@@ -19,7 +19,7 @@ Complete usage examples for the `pynetlink` library.
 
 ## Setup
 
-Before running the examples, configure your Netlink device credentials:
+Before running the examples, configure your NetLink device credentials:
 
 1. Copy the example environment file:
    ```bash
@@ -101,7 +101,7 @@ if __name__ == "__main__":
 
 ## Device Discovery
 
-Automatically find Netlink devices on your network using mDNS/Zeroconf:
+Automatically find NetLink devices on your network using mDNS/Zeroconf:
 
 ### Basic Discovery
 
@@ -109,7 +109,7 @@ Automatically find Netlink devices on your network using mDNS/Zeroconf:
 from pynetlink import NetlinkClient
 
 async def discover() -> None:
-    """Discover all Netlink devices."""
+    """Discover all NetLink devices."""
     print("Discovering devices...")
     devices = await NetlinkClient.discover_devices(timeout=5.0)
 
@@ -449,7 +449,7 @@ async def batch_update() -> None:
 
 ## Browser Control
 
-Control the browser container (if available on your Netlink device):
+Control the browser container (if available on your NetLink device):
 
 ### Get Current URL
 
@@ -575,7 +575,7 @@ async def comprehensive_error_handling() -> None:
     except NetlinkConnectionError as e:
         print(f"🔌 Connection error: {e}")
     except NetlinkError as e:
-        print(f"⚠️  Netlink error: {e}")
+        print(f"⚠️  NetLink error: {e}")
     except Exception as e:
         print(f"💥 Unexpected error: {e}")
 ```
@@ -615,7 +615,7 @@ async def shared_session() -> None:
 
 ```python
 async def control_multiple_devices() -> None:
-    """Control multiple Netlink devices."""
+    """Control multiple NetLink devices."""
     devices = [
         ("192.0.2.10", "token1"),
         ("192.0.2.11", "token2"),

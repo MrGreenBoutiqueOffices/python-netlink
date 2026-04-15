@@ -27,7 +27,7 @@ async def main() -> None:
     client = NetlinkClient(host=HOST, token=TOKEN)
 
     async with client:
-        print("Connecting to Netlink device...")
+        print("Connecting to NetLink device...")
         await client.connect()
         print(f"Connected: {client.connected}")
 

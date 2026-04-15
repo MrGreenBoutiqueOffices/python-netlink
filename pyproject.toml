@@ -1,7 +1,7 @@
 [project]
 name = "pynetlink"
 version = "0.0.0"
-description = "Async Python client for Netlink desk and display control"
+description = "Async Python client for NetLink desk and display control"
 authors = [{ name="Klaas Schoute", email="<k.schoute@net-os.com>"}]
 maintainers = [{name="Klaas Schoute", email="<k.schoute@net-os.com>"}]
 license = "LGPL-3.0-or-later"

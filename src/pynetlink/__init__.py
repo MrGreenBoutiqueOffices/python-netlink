@@ -1,4 +1,4 @@
-"""Asynchronous Python client for Netlink."""
+"""Asynchronous Python client for NetLink."""
 
 from .const import (
     EVENT_ACCESS_CODES_STATE,
