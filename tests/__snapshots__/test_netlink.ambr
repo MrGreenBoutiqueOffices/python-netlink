@@ -1,0 +1,33 @@
+# serializer version: 1
+# name: test_client_access_codes_property
+  dict({
+    'signing_maintenance': dict({
+      'code': '481926',
+      'timezone': 'Europe/Amsterdam',
+      'valid_from': '2026-04-14T00:00:00+02:00',
+      'valid_until': '2026-04-15T00:00:00+02:00',
+    }),
+    'web_login': dict({
+      'code': '481926',
+      'timezone': 'Europe/Amsterdam',
+      'valid_from': '2026-04-14T00:00:00+02:00',
+      'valid_until': '2026-04-15T00:00:00+02:00',
+    }),
+  })
+# ---
+# name: test_client_on_access_codes_state_accepts_json_string
+  dict({
+    'signing_maintenance': dict({
+      'code': '481926',
+      'timezone': 'Europe/Amsterdam',
+      'valid_from': '2026-04-14T00:00:00+02:00',
+      'valid_until': '2026-04-15T00:00:00+02:00',
+    }),
+    'web_login': dict({
+      'code': '481926',
+      'timezone': 'Europe/Amsterdam',
+      'valid_from': '2026-04-14T00:00:00+02:00',
+      'valid_until': '2026-04-15T00:00:00+02:00',
+    }),
+  })
+# ---
