@@ -48,7 +48,7 @@ async def main() -> None:
     """Listen for display state changes and print deltas."""
     async with NetlinkClient(host=HOST, token=TOKEN) as client:
         await client.connect()
-        print("Connected to Netlink WebSocket\n")
+        print("Connected to NetLink WebSocket\n")
 
         # Store previous states using parsed Display objects
         previous: dict[str, str] = {}

@@ -1,4 +1,4 @@
-"""Main Netlink client facade."""
+"""Main NetLink client facade."""
 
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class NetlinkClient:  # pylint: disable=too-many-public-methods
-    """Asynchronous client for Netlink devices.
+    """Asynchronous client for NetLink devices.
 
     Combines WebSocket (real-time events) and REST API (commands).
 
@@ -582,7 +582,7 @@ class NetlinkClient:  # pylint: disable=too-many-public-methods
     # Discovery methods
     @staticmethod
     async def discover_devices(discovery_timeout: float = 5.0) -> list[NetlinkDevice]:
-        """Discover Netlink devices on local network via mDNS.
+        """Discover NetLink devices on local network via mDNS.
 
         Args:
         ----
@@ -602,7 +602,7 @@ class NetlinkClient:  # pylint: disable=too-many-public-methods
         devices: list[NetlinkDevice] = []
 
         class NetlinkListener(ServiceListener):
-            """Capture discovered Netlink devices."""
+            """Capture discovered NetLink devices."""
 
             def add_service(self, zc: Zeroconf, type_: str, name: str) -> None:
                 info = zc.get_service_info(type_, name)

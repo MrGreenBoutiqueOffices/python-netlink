@@ -1,4 +1,4 @@
-# Netlink API Reference
+# NetLink API Reference
 
 Based on: `blocks/netlink-webserver` implementation
 

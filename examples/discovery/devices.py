@@ -8,8 +8,8 @@ from pynetlink import NetlinkClient
 
 
 async def main() -> None:
-    """Discover Netlink devices on local network."""
-    print("Discovering Netlink devices via mDNS...")
+    """Discover NetLink devices on local network."""
+    print("Discovering NetLink devices via mDNS...")
     print("This will take 5 seconds...\n")
 
     devices = await NetlinkClient.discover_devices(discovery_timeout=5.0)

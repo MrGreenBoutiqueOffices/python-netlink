@@ -1,4 +1,4 @@
-"""Data models for Netlink API."""
+"""Data models for NetLink API."""
 
 from __future__ import annotations
 

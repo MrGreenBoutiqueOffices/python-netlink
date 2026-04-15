@@ -15,7 +15,7 @@ class DeviceInfo(DataClassDictMixin):
     ----------
         device_id: Unique device identifier (BALENA_DEVICE_UUID or MAC address)
         device_name: Device name from Balena
-        version: Netlink software version
+        version: NetLink software version
         api_version: API version
         model: Device model (e.g., "NetOS Desk")
         mac_address: Device MAC address

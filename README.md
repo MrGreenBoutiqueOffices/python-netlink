@@ -1,5 +1,5 @@
 <!-- Banner -->
-![alt Banner of the Netlink package](https://raw.githubusercontent.com/MrGreenBoutiqueOffices/python-netlink/main/assets/header_pynetlink-min.png)
+![alt Banner of the NetLink package](https://raw.githubusercontent.com/MrGreenBoutiqueOffices/python-netlink/main/assets/header_pynetlink-min.png)
 
 <!-- PROJECT SHIELDS -->
 [![GitHub Release][releases-shield]][releases]
@@ -18,22 +18,22 @@
 [![Code Coverage][codecov-shield]][codecov-url]
 [![OpenSSF Scorecard][scorecard-shield]][scorecard-url]
 
-Asynchronous Python client for Netlink desk and display control.
+Asynchronous Python client for NetLink desk and display control.
 
 ## About
 
-Netlink is the operating software for smart standing desks, developed by [NetOS](https://net-os.com/). The system powers smart desks in commercial office environments, most notably at [Mr.Green Offices](https://mrgreenoffices.nl/) locations throughout the Netherlands.
+NetLink is the operating software for smart standing desks, developed by [NetOS](https://net-os.com/). The system powers smart desks in commercial office environments, most notably at [Mr.Green Offices](https://mrgreenoffices.nl/) locations throughout the Netherlands.
 
-This Python package provides a modern, fully typed client for controlling Netlink-equipped desks. It offers both WebSocket (for real-time state updates and fast commands) and REST API support, making it ideal for integration with Home Assistant and other automation systems.
+This Python package provides a modern, fully typed client for controlling NetLink-equipped desks. It offers both WebSocket (for real-time state updates and fast commands) and REST API support, making it ideal for integration with Home Assistant and other automation systems.
 
-**Target Audience:** This package is primarily intended for organizations and developers working with Netlink-equipped office environments. While publicly available on PyPI, the Netlink system itself is designed for commercial office spaces.
+**Target Audience:** This package is primarily intended for organizations and developers working with NetLink-equipped office environments. While publicly available on PyPI, the NetLink system itself is designed for commercial office spaces.
 
 ## Key Features
 
 - 🔌 **Real-time state updates** via WebSocket (desk position, display settings)
 - ⚡ **Fast WebSocket commands** with acknowledgements (~50% faster than REST)
 - 🔄 **Smart transport** - automatic fallback from WebSocket to REST when needed
-- 🔍 **mDNS/Zeroconf discovery** - automatically find Netlink devices on your network
+- 🔍 **mDNS/Zeroconf discovery** - automatically find NetLink devices on your network
 - 📦 **Type-safe** with full type hints and mashumaro data models
 - 🏠 **Home Assistant ready** with auto-reconnection and exponential backoff
 - ⚡ **Async-first** using modern Python async/await patterns

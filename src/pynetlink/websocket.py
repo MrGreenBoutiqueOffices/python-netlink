@@ -1,4 +1,4 @@
-"""WebSocket/Socket.IO handler for Netlink devices."""
+"""WebSocket/Socket.IO handler for NetLink devices."""
 
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ _LOGGER = logging.getLogger(__name__)
 
 @dataclass
 class NetlinkWebSocket:
-    """WebSocket client for real-time Netlink events.
+    """WebSocket client for real-time NetLink events.
 
     Handles Socket.IO connection, authentication, and event subscription.
 
@@ -77,7 +77,7 @@ class NetlinkWebSocket:
         self._current_delay = self.reconnect_delay
 
     async def connect(self) -> None:
-        """Connect to Netlink WebSocket.
+        """Connect to NetLink WebSocket.
 
         Raises
         ------

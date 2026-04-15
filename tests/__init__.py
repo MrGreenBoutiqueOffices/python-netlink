@@ -1,4 +1,4 @@
-"""Asynchronous Python client for Netlink."""
+"""Asynchronous Python client for NetLink."""
 
 from pathlib import Path
 

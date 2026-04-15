@@ -1,4 +1,4 @@
-"""REST API client for Netlink devices."""
+"""REST API client for NetLink devices."""
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ VERSION = metadata.version(__package__ or "pynetlink")
 
 @dataclass
 class NetlinkREST:
-    """REST API client for Netlink commands.
+    """REST API client for NetLink commands.
 
     Args:
     ----

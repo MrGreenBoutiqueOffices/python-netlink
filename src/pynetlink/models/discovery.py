@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 @dataclass
 class NetlinkDevice:
-    """Discovered Netlink device via mDNS.
+    """Discovered NetLink device via mDNS.
 
     Attributes
     ----------
