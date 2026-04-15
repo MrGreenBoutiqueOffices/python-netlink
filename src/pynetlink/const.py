@@ -16,6 +16,7 @@ EVENT_DISPLAYS_LIST = "displays.list"
 EVENT_BROWSER_STATE = "browser.state"
 EVENT_DEVICE_INFO = "device.info"
 EVENT_SYSTEM_MQTT = "system.mqtt"
+EVENT_ACCESS_CODES_STATE = "access_codes.state"
 
 # API endpoints
 API_VERSION = "v1"

@@ -11,11 +11,13 @@ from zeroconf import ServiceBrowser, ServiceListener, Zeroconf
 
 from .const import (
     DEFAULT_REQUEST_TIMEOUT,
+    EVENT_ACCESS_CODES_STATE,
     EVENT_DESK_STATE,
     EVENT_DEVICE_INFO,
     EVENT_DISPLAY_STATE,
 )
 from .models import (
+    AccessCodes,
     BrowserState,
     Desk,
     DeskState,
@@ -34,7 +36,7 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class NetlinkClient:
+class NetlinkClient:  # pylint: disable=too-many-public-methods
     """Asynchronous client for Netlink devices.
 
     Combines WebSocket (real-time events) and REST API (commands).
@@ -72,6 +74,7 @@ class NetlinkClient:
         repr=False,
     )
     _device_info: DeviceInfo | None = field(default=None, init=False, repr=False)
+    _access_codes: AccessCodes | None = field(default=None, init=False, repr=False)
 
     def __post_init__(self) -> None:
         """Initialize WebSocket and REST clients."""
@@ -82,6 +85,7 @@ class NetlinkClient:
         self._ws.on(EVENT_DESK_STATE)(self._on_desk_state)
         self._ws.on(EVENT_DISPLAY_STATE)(self._on_display_state)
         self._ws.on(EVENT_DEVICE_INFO)(self._on_device_info)
+        self._ws.on(EVENT_ACCESS_CODES_STATE)(self._on_access_codes_state)
 
     async def __aenter__(self) -> Self:
         """Async context manager entry."""
@@ -161,6 +165,12 @@ class NetlinkClient:
         info_data = payload.get("data", payload)
         self._device_info = DeviceInfo.from_dict(info_data)
 
+    async def _on_access_codes_state(self, data: str | dict[str, Any]) -> None:
+        """Update internal access-code state from WebSocket."""
+        payload = json.loads(data) if isinstance(data, str) else data
+        access_code_data = payload.get("data", payload)
+        self._access_codes = AccessCodes.from_dict(access_code_data)
+
     # Properties for WebSocket state
     @property
     def desk_state(self) -> DeskState | None:
@@ -194,6 +204,11 @@ class NetlinkClient:
 
         """
         return self._device_info
+
+    @property
+    def access_codes(self) -> AccessCodes | None:
+        """Latest access-code state from WebSocket."""
+        return self._access_codes
 
     @property
     def connected(self) -> bool:
@@ -559,6 +574,10 @@ class NetlinkClient:
         if transport == "websocket":
             return await self._ws.send_command("command.browser.refresh")
         return await self._rest.refresh_browser()
+
+    async def get_access_codes(self) -> AccessCodes:
+        """Get current daily access codes for privileged admin clients."""
+        return await self._rest.get_access_codes()
 
     # Discovery methods
     @staticmethod

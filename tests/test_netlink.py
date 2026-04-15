@@ -3,11 +3,13 @@
 # pylint: disable=protected-access
 from __future__ import annotations
 
+import json
 from unittest.mock import AsyncMock, patch
 
 from aiohttp import ClientSession
 from aiohttp.hdrs import METH_GET, METH_POST, METH_PUT
 from aresponses import ResponsesMockServer
+from syrupy.assertion import SnapshotAssertion
 
 from pynetlink import NetlinkClient
 
@@ -123,6 +125,20 @@ async def test_client_device_info_property() -> None:
     assert client.device_info.model == "NetOS Desk"
 
 
+async def test_client_access_codes_property(snapshot: SnapshotAssertion) -> None:
+    """Test access_codes property returns cached access code state."""
+    client = NetlinkClient(host="192.168.1.100", token="test-token")
+
+    assert client.access_codes is None
+
+    access_code_data = {"data": json.loads(load_fixtures("access_codes.json"))}
+
+    await client._on_access_codes_state(access_code_data)
+
+    assert client.access_codes is not None
+    assert client.access_codes.to_dict() == snapshot
+
+
 async def test_client_on_desk_state_nested_data() -> None:
     """Test _on_desk_state extracts nested data structure."""
     client = NetlinkClient(host="192.168.1.100", token="test-token")
@@ -186,6 +202,18 @@ async def test_client_on_device_info_nested_data() -> None:
     assert client.device_info.model == "NetOS Desk"
 
 
+async def test_client_on_access_codes_state_accepts_json_string(
+    snapshot: SnapshotAssertion,
+) -> None:
+    """Test _on_access_codes_state parses JSON string payloads."""
+    client = NetlinkClient(host="192.168.1.100", token="test-token")
+
+    await client._on_access_codes_state(load_fixtures("access_codes.json"))
+
+    assert client.access_codes is not None
+    assert client.access_codes.to_dict() == snapshot
+
+
 async def test_client_get_device_info(aresponses: ResponsesMockServer) -> None:
     """Test get_device_info delegates to REST."""
     aresponses.add(
@@ -209,6 +237,30 @@ async def test_client_get_device_info(aresponses: ResponsesMockServer) -> None:
 
         info = await client.get_device_info()
         assert info.device_id == "abc123def456"
+
+
+async def test_client_get_access_codes(aresponses: ResponsesMockServer) -> None:
+    """Test get_access_codes delegates to REST."""
+    aresponses.add(
+        "192.168.1.100",
+        "/api/v1/admin/access-codes",
+        METH_GET,
+        aresponses.Response(
+            status=200,
+            headers={"Content-Type": "application/json"},
+            text=load_fixtures("access_codes.json"),
+        ),
+    )
+
+    async with ClientSession() as session:
+        client = NetlinkClient(
+            host="192.168.1.100", token="test-token", session=session
+        )
+        client._rest._session = session
+
+        codes = await client.get_access_codes()
+        assert codes.web_login.code == "481926"
+        assert codes.signing_maintenance.code == "481926"
 
 
 async def test_client_get_desk_status(aresponses: ResponsesMockServer) -> None:

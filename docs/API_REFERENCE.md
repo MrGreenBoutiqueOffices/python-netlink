@@ -465,3 +465,28 @@ async with NetlinkClient(host, token) as client:
     await client.set_desk_height(120.0, transport="websocket")
     await client.set_desk_height(120.0, transport="rest")
 ```
+
+### GET `/api/v1/admin/access-codes`
+Return the current daily access codes for privileged admin clients.
+
+**Response**:
+```python
+{
+    "web_login": {
+        "code": "481926",
+        "valid_from": "2026-04-14T00:00:00+02:00",
+        "valid_until": "2026-04-15T00:00:00+02:00",
+        "timezone": "Europe/Amsterdam"
+    },
+    "signing_maintenance": {
+        "code": "481926",
+        "valid_from": "2026-04-14T00:00:00+02:00",
+        "valid_until": "2026-04-15T00:00:00+02:00",
+        "timezone": "Europe/Amsterdam"
+    }
+}
+```
+
+**Notes**:
+- This endpoint is privileged and requires the device bearer token.
+- The payload exposes the current plaintext code and should be treated as sensitive.

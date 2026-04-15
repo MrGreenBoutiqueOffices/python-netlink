@@ -530,6 +530,29 @@ async def test_browser_refresh(aresponses: ResponsesMockServer) -> None:
         await rest.refresh_browser()
 
 
+async def test_get_access_codes(aresponses: ResponsesMockServer) -> None:
+    """Test GET /api/v1/admin/access-codes."""
+    aresponses.add(
+        "192.168.1.100",
+        "/api/v1/admin/access-codes",
+        METH_GET,
+        aresponses.Response(
+            status=200,
+            headers={"Content-Type": "application/json"},
+            text=load_fixtures("access_codes.json"),
+        ),
+    )
+
+    async with ClientSession() as session:
+        rest = NetlinkREST(host="192.168.1.100", token="test-token")
+        rest._session = session
+        access_codes = await rest.get_access_codes()
+
+        assert access_codes.web_login.code == "481926"
+        assert access_codes.web_login.valid_until == "2026-04-15T00:00:00+02:00"
+        assert access_codes.signing_maintenance.timezone == "Europe/Amsterdam"
+
+
 async def test_authentication_error(aresponses: ResponsesMockServer) -> None:
     """Test 401 Unauthorized response."""
     aresponses.add(

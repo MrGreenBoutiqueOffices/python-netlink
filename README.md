@@ -133,6 +133,17 @@ More examples:
 - [`discover_devices.py`](./examples/discover_devices.py) - Device discovery with mDNS
 - [`desk_state_listener.py`](./examples/desk_state_listener.py) - Real-time desk state monitoring
 
+### Read Current Daily Access Codes
+
+```python
+async with NetlinkClient(host, token) as client:
+    access_codes = await client.get_access_codes()
+    print(access_codes.web_login.code)
+    print(access_codes.signing_maintenance.valid_until)
+```
+
+This uses the privileged admin endpoint `GET /api/v1/admin/access-codes` and therefore requires the device `REST_BEARER_TOKEN`.
+
 ## Contributing
 
 This is an active open-source project. We are always open to people who want to
