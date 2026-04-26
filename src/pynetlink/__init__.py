@@ -15,11 +15,14 @@ from .exceptions import (
     NetlinkConnectionError,
     NetlinkDataError,
     NetlinkError,
+    NetlinkNotFoundError,
     NetlinkTimeoutError,
 )
 from .models import (
     AccessCode,
     AccessCodes,
+    AuthMethod,
+    AuthMethods,
     BrowserState,
     Desk,
     DeskState,
@@ -45,6 +48,8 @@ __all__ = [
     "EVENT_SYSTEM_MQTT",
     "AccessCode",
     "AccessCodes",
+    "AuthMethod",
+    "AuthMethods",
     "BrowserState",
     "Desk",
     "DeskState",
@@ -60,6 +65,7 @@ __all__ = [
     "NetlinkDataError",
     "NetlinkDevice",
     "NetlinkError",
+    "NetlinkNotFoundError",
     "NetlinkTimeoutError",
     "discover_devices",
 ]

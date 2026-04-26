@@ -1,0 +1,13 @@
+{
+  "signing_maintenance": {
+    "pin": true,
+    "pin_length": 5,
+    "pin_type": "static"
+  },
+  "web_login": {
+    "password": true,
+    "pin": true,
+    "pin_length": 6,
+    "pin_type": "daily"
+  }
+}

@@ -15,6 +15,7 @@ from aresponses import ResponsesMockServer
 from pynetlink.exceptions import (
     NetlinkAuthenticationError,
     NetlinkConnectionError,
+    NetlinkNotFoundError,
     NetlinkTimeoutError,
 )
 from pynetlink.rest import NetlinkREST
@@ -547,10 +548,64 @@ async def test_get_access_codes(aresponses: ResponsesMockServer) -> None:
         rest = NetlinkREST(host="192.168.1.100", token="test-token")
         rest._session = session
         access_codes = await rest.get_access_codes()
+        web_login = access_codes.web_login
+        signing_maintenance = access_codes.signing_maintenance
 
-        assert access_codes.web_login.code == "481926"
-        assert access_codes.web_login.valid_until == "2026-04-15T00:00:00+02:00"
-        assert access_codes.signing_maintenance.timezone == "Europe/Amsterdam"
+        assert web_login is not None
+        assert signing_maintenance is not None
+        assert web_login.code == "481926"
+        assert web_login.valid_until == "2026-04-15T00:00:00+02:00"
+        assert signing_maintenance.timezone == "Europe/Amsterdam"
+
+
+async def test_get_access_codes_with_missing_purpose(
+    aresponses: ResponsesMockServer,
+) -> None:
+    """Test GET /api/v1/admin/access-codes accepts omitted purposes."""
+    aresponses.add(
+        "192.168.1.100",
+        "/api/v1/admin/access-codes",
+        METH_GET,
+        aresponses.Response(
+            status=200,
+            headers={"Content-Type": "application/json"},
+            text=load_fixtures("access_codes_web_login_only.json"),
+        ),
+    )
+
+    async with ClientSession() as session:
+        rest = NetlinkREST(host="192.168.1.100", token="test-token")
+        rest._session = session
+        access_codes = await rest.get_access_codes()
+        web_login = access_codes.web_login
+
+        assert web_login is not None
+        assert web_login.code == "739204"
+        assert access_codes.signing_maintenance is None
+
+
+async def test_get_auth_methods(aresponses: ResponsesMockServer) -> None:
+    """Test GET /api/v1/auth/methods."""
+    aresponses.add(
+        "192.168.1.100",
+        "/api/v1/auth/methods",
+        METH_GET,
+        aresponses.Response(
+            status=200,
+            headers={"Content-Type": "application/json"},
+            text=load_fixtures("auth_methods.json"),
+        ),
+    )
+
+    async with ClientSession() as session:
+        rest = NetlinkREST(host="192.168.1.100", token="test-token")
+        rest._session = session
+        auth_methods = await rest.get_auth_methods()
+
+        assert auth_methods.web_login is not None
+        assert auth_methods.web_login.pin_type == "daily"
+        assert auth_methods.signing_maintenance is not None
+        assert auth_methods.signing_maintenance.pin_length == 5
 
 
 async def test_authentication_error(aresponses: ResponsesMockServer) -> None:
@@ -615,6 +670,27 @@ async def test_method_not_allowed_error(aresponses: ResponsesMockServer) -> None
             NetlinkConnectionError, match="HTTP method POST not allowed"
         ):
             await rest._request("desk/height", method=METH_POST)
+
+
+async def test_not_found_error(aresponses: ResponsesMockServer) -> None:
+    """Test handling of HTTP 404 responses."""
+    aresponses.add(
+        "192.168.1.100",
+        "/api/v1/admin/access-codes",
+        METH_GET,
+        aresponses.Response(
+            status=404,
+            headers={"Content-Type": "application/json"},
+            text="Not Found",
+        ),
+    )
+
+    async with ClientSession() as session:
+        rest = NetlinkREST(host="192.168.1.100", token="test-token")
+        rest._session = session
+
+        with pytest.raises(NetlinkNotFoundError):
+            await rest.get_access_codes()
 
 
 async def test_request_creates_session(aresponses: ResponsesMockServer) -> None:

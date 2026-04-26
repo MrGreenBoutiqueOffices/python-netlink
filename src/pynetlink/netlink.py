@@ -16,8 +16,10 @@ from .const import (
     EVENT_DEVICE_INFO,
     EVENT_DISPLAY_STATE,
 )
+from .exceptions import NetlinkDataError
 from .models import (
     AccessCodes,
+    AuthMethods,
     BrowserState,
     Desk,
     DeskState,
@@ -578,6 +580,41 @@ class NetlinkClient:  # pylint: disable=too-many-public-methods
     async def get_access_codes(self) -> AccessCodes:
         """Get current daily access codes for privileged admin clients."""
         return await self._rest.get_access_codes()
+
+    async def get_auth_methods(self, transport: str = "auto") -> AuthMethods:
+        """Get available authentication methods per access purpose.
+
+        Args:
+        ----
+            transport: Transport method - "auto", "websocket", or "rest"
+
+        Returns:
+        -------
+            Auth methods per access purpose
+
+        """
+        if transport == "auto":
+            if self._ws.connected:
+                return await self._get_auth_methods_websocket()
+            return await self._rest.get_auth_methods()
+        if transport == "websocket":
+            return await self._get_auth_methods_websocket()
+        return await self._rest.get_auth_methods()
+
+    async def _get_auth_methods_websocket(self) -> AuthMethods:
+        """Get auth methods via WebSocket command acknowledgement."""
+        ack = await self._ws.send_command("command.access.methods")
+        payload = ack.get("data", ack)
+        if not isinstance(payload, dict):
+            msg = "Invalid access methods acknowledgement"
+            raise NetlinkDataError(msg)
+
+        methods = payload.get("methods", payload)
+        if not isinstance(methods, dict):
+            msg = "Invalid access methods payload"
+            raise NetlinkDataError(msg)
+
+        return AuthMethods.from_dict(methods)
 
     # Discovery methods
     @staticmethod

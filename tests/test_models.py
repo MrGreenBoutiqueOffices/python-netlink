@@ -8,6 +8,8 @@ from dataclasses import asdict
 from syrupy.assertion import SnapshotAssertion
 
 from pynetlink.models import (
+    AccessCodes,
+    AuthMethods,
     BrowserState,
     Desk,
     DeskState,
@@ -99,6 +101,29 @@ def test_browser_state_from_dict(snapshot: SnapshotAssertion) -> None:
 
     # Snapshot test
     assert browser_state.to_dict() == snapshot
+
+
+def test_access_codes_accept_missing_purpose() -> None:
+    """Test access codes can omit purposes that do not expose a code."""
+    data = json.loads(load_fixtures("access_codes_web_login_only.json"))
+    access_codes = AccessCodes.from_dict(data)
+    web_login = access_codes.web_login
+
+    assert web_login is not None
+    assert web_login.code == "739204"
+    assert access_codes.signing_maintenance is None
+
+
+def test_auth_methods_from_dict() -> None:
+    """Test auth methods metadata deserialization."""
+    data = json.loads(load_fixtures("auth_methods.json"))
+    auth_methods = AuthMethods.from_dict(data)
+
+    assert auth_methods.web_login is not None
+    assert auth_methods.web_login.password is True
+    assert auth_methods.web_login.pin_type == "daily"
+    assert auth_methods.signing_maintenance is not None
+    assert auth_methods.signing_maintenance.pin_length == 5
 
 
 def test_device_info_from_dict(snapshot: SnapshotAssertion) -> None:
