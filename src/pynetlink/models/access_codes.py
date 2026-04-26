@@ -27,7 +27,7 @@ class AccessCodes(DataClassDictMixin):
 
 @dataclass
 class AuthMethod(DataClassDictMixin):
-    """Authentication method metadata for one access purpose."""
+    """Authentication method metadata for one login."""
 
     password: bool = False
     pin: bool = False
@@ -37,7 +37,7 @@ class AuthMethod(DataClassDictMixin):
 
 @dataclass
 class AuthMethods(DataClassDictMixin):
-    """Available authentication methods per access purpose."""
+    """Available authentication methods for web and signing logins."""
 
     web_login: AuthMethod | None = None
     signing_maintenance: AuthMethod | None = None

@@ -138,11 +138,14 @@ More examples:
 ```python
 async with NetlinkClient(host, token) as client:
     access_codes = await client.get_access_codes()
-    print(access_codes.web_login.code)
-    print(access_codes.signing_maintenance.valid_until)
+    if access_codes.web_login:
+        print(access_codes.web_login.code)
+    if access_codes.signing_maintenance:
+        print(access_codes.signing_maintenance.valid_until)
 ```
 
 This uses the privileged admin endpoint `GET /api/v1/admin/access-codes` and therefore requires the device `REST_BEARER_TOKEN`.
+`web_login` or `signing_maintenance` can be omitted when that login does not expose a current daily code.
 
 ## Contributing
 

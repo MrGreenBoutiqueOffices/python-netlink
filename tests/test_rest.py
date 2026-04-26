@@ -558,10 +558,10 @@ async def test_get_access_codes(aresponses: ResponsesMockServer) -> None:
         assert signing_maintenance.timezone == "Europe/Amsterdam"
 
 
-async def test_get_access_codes_with_missing_purpose(
+async def test_get_access_codes_with_missing_entry(
     aresponses: ResponsesMockServer,
 ) -> None:
-    """Test GET /api/v1/admin/access-codes accepts omitted purposes."""
+    """Test GET /api/v1/admin/access-codes accepts omitted logins."""
     aresponses.add(
         "192.168.1.100",
         "/api/v1/admin/access-codes",

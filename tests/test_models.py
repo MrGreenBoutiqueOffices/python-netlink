@@ -103,8 +103,8 @@ def test_browser_state_from_dict(snapshot: SnapshotAssertion) -> None:
     assert browser_state.to_dict() == snapshot
 
 
-def test_access_codes_accept_missing_purpose() -> None:
-    """Test access codes can omit purposes that do not expose a code."""
+def test_access_codes_accept_missing_entry() -> None:
+    """Test access codes can omit logins that do not expose a code."""
     data = json.loads(load_fixtures("access_codes_web_login_only.json"))
     access_codes = AccessCodes.from_dict(data)
     web_login = access_codes.web_login

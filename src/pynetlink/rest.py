@@ -478,7 +478,7 @@ class NetlinkREST:
 
     # Admin endpoints
     async def get_auth_methods(self) -> AuthMethods:
-        """Get available authentication methods per access purpose."""
+        """Get configured authentication methods for web and signing logins."""
         data = await self._request("auth/methods")
         return AuthMethods.from_dict(data)
 

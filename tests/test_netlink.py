@@ -216,8 +216,8 @@ async def test_client_on_access_codes_state_accepts_json_string(
     assert client.access_codes.to_dict() == snapshot
 
 
-async def test_client_on_access_codes_state_accepts_missing_purpose() -> None:
-    """Test _on_access_codes_state accepts payloads with omitted purposes."""
+async def test_client_on_access_codes_state_accepts_missing_entry() -> None:
+    """Test _on_access_codes_state accepts payloads with omitted logins."""
     client = NetlinkClient(host="192.168.1.100", token="test-token")
 
     await client._on_access_codes_state(

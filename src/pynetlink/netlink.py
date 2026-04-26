@@ -582,7 +582,7 @@ class NetlinkClient:  # pylint: disable=too-many-public-methods
         return await self._rest.get_access_codes()
 
     async def get_auth_methods(self, transport: str = "auto") -> AuthMethods:
-        """Get available authentication methods per access purpose.
+        """Get configured authentication methods for web and signing logins.
 
         Args:
         ----
@@ -590,7 +590,7 @@ class NetlinkClient:  # pylint: disable=too-many-public-methods
 
         Returns:
         -------
-            Auth methods per access purpose
+            Configured authentication methods
 
         """
         if transport == "auto":
