@@ -63,6 +63,9 @@ REST-only desk and display control.
 ### [`rest/browser_control.py`](./rest/browser_control.py)
 Browser control endpoints via REST.
 
+### [`rest/auth_methods.py`](./rest/auth_methods.py)
+Login method and daily access-code inspection via REST.
+
 ## Quick Start
 
 Basic example showing connection and desk control:

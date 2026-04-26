@@ -6,12 +6,14 @@ from __future__ import annotations
 import json
 from unittest.mock import AsyncMock, patch
 
+import pytest
 from aiohttp import ClientSession
 from aiohttp.hdrs import METH_GET, METH_POST, METH_PUT
 from aresponses import ResponsesMockServer
 from syrupy.assertion import SnapshotAssertion
 
-from pynetlink import NetlinkClient
+from pynetlink import NetlinkClient, NetlinkDataError
+from pynetlink.models import AuthMethods
 
 from . import load_fixtures
 
@@ -214,6 +216,21 @@ async def test_client_on_access_codes_state_accepts_json_string(
     assert client.access_codes.to_dict() == snapshot
 
 
+async def test_client_on_access_codes_state_accepts_missing_entry() -> None:
+    """Test _on_access_codes_state accepts payloads with omitted logins."""
+    client = NetlinkClient(host="192.168.1.100", token="test-token")
+
+    await client._on_access_codes_state(
+        load_fixtures("access_codes_web_login_only.json")
+    )
+
+    assert client.access_codes is not None
+    web_login = client.access_codes.web_login
+    assert web_login is not None
+    assert web_login.code == "739204"
+    assert client.access_codes.signing_maintenance is None
+
+
 async def test_client_get_device_info(aresponses: ResponsesMockServer) -> None:
     """Test get_device_info delegates to REST."""
     aresponses.add(
@@ -259,8 +276,166 @@ async def test_client_get_access_codes(aresponses: ResponsesMockServer) -> None:
         client._rest._session = session
 
         codes = await client.get_access_codes()
-        assert codes.web_login.code == "481926"
-        assert codes.signing_maintenance.code == "481926"
+        web_login = codes.web_login
+        signing_maintenance = codes.signing_maintenance
+        assert web_login is not None
+        assert signing_maintenance is not None
+        assert web_login.code == "481926"
+        assert signing_maintenance.code == "481926"
+
+
+async def test_client_get_auth_methods(aresponses: ResponsesMockServer) -> None:
+    """Test get_auth_methods delegates to REST."""
+    aresponses.add(
+        "192.168.1.100",
+        "/api/v1/auth/methods",
+        METH_GET,
+        aresponses.Response(
+            status=200,
+            headers={"Content-Type": "application/json"},
+            text=load_fixtures("auth_methods.json"),
+        ),
+    )
+
+    async with ClientSession() as session:
+        client = NetlinkClient(
+            host="192.168.1.100", token="test-token", session=session
+        )
+        client._rest._session = session
+
+        auth_methods = await client.get_auth_methods()
+        assert auth_methods.web_login is not None
+        assert auth_methods.web_login.password is True
+        assert auth_methods.signing_maintenance is not None
+        assert auth_methods.signing_maintenance.pin_type == "static"
+
+
+async def test_client_get_auth_methods_uses_websocket_when_connected() -> None:
+    """Test get_auth_methods uses WebSocket command when connected."""
+    client = NetlinkClient(host="192.168.1.100", token="test-token")
+    client._ws._connected = True
+
+    with patch.object(
+        client._ws,
+        "send_command",
+        new_callable=AsyncMock,
+        return_value={
+            "id": "command-id",
+            "status": "ok",
+            "data": json.loads(load_fixtures("auth_methods.json")),
+        },
+    ) as mock_send:
+        auth_methods = await client.get_auth_methods()
+
+        mock_send.assert_called_once_with("command.access.methods")
+        assert auth_methods.web_login is not None
+        assert auth_methods.web_login.pin_type == "daily"
+        assert auth_methods.signing_maintenance is not None
+        assert auth_methods.signing_maintenance.pin_type == "static"
+
+
+async def test_client_get_auth_methods_websocket_transport() -> None:
+    """Test get_auth_methods can force WebSocket transport."""
+    client = NetlinkClient(host="192.168.1.100", token="test-token")
+
+    with patch.object(
+        client._ws,
+        "send_command",
+        new_callable=AsyncMock,
+        return_value={
+            "id": "command-id",
+            "status": "ok",
+            "data": json.loads(load_fixtures("auth_methods.json")),
+        },
+    ) as mock_send:
+        auth_methods = await client.get_auth_methods(transport="websocket")
+
+        mock_send.assert_called_once_with("command.access.methods")
+        assert auth_methods.web_login is not None
+        assert auth_methods.web_login.pin_type == "daily"
+
+
+async def test_client_get_auth_methods_rest_transport() -> None:
+    """Test get_auth_methods can force REST transport."""
+    client = NetlinkClient(host="192.168.1.100", token="test-token")
+    expected = AuthMethods.from_dict(json.loads(load_fixtures("auth_methods.json")))
+
+    with patch.object(
+        client._rest,
+        "get_auth_methods",
+        new_callable=AsyncMock,
+        return_value=expected,
+    ) as mock_get_auth_methods:
+        auth_methods = await client.get_auth_methods(transport="rest")
+
+        mock_get_auth_methods.assert_called_once_with()
+        assert auth_methods is expected
+
+
+async def test_client_get_auth_methods_accepts_nested_websocket_methods() -> None:
+    """Test get_auth_methods accepts nested WebSocket methods payloads."""
+    client = NetlinkClient(host="192.168.1.100", token="test-token")
+    client._ws._connected = True
+
+    with patch.object(
+        client._ws,
+        "send_command",
+        new_callable=AsyncMock,
+        return_value={
+            "id": "command-id",
+            "status": "ok",
+            "data": {"methods": json.loads(load_fixtures("auth_methods.json"))},
+        },
+    ) as mock_send:
+        auth_methods = await client.get_auth_methods()
+
+        mock_send.assert_called_once_with("command.access.methods")
+        assert auth_methods.web_login is not None
+        assert auth_methods.web_login.pin_type == "daily"
+        assert auth_methods.signing_maintenance is not None
+        assert auth_methods.signing_maintenance.pin_type == "static"
+
+
+async def test_client_get_auth_methods_rejects_invalid_websocket_payload() -> None:
+    """Test get_auth_methods rejects invalid WebSocket payloads."""
+    client = NetlinkClient(host="192.168.1.100", token="test-token")
+    client._ws._connected = True
+
+    with (
+        pytest.raises(NetlinkDataError),
+        patch.object(
+            client._ws,
+            "send_command",
+            new_callable=AsyncMock,
+            return_value={
+                "id": "command-id",
+                "status": "ok",
+                "data": {"methods": "invalid"},
+            },
+        ),
+    ):
+        await client.get_auth_methods()
+
+
+async def test_client_get_auth_methods_rejects_invalid_websocket_ack() -> None:
+    """Test get_auth_methods rejects invalid WebSocket acknowledgements."""
+    client = NetlinkClient(host="192.168.1.100", token="test-token")
+    client._ws._connected = True
+
+    with (
+        pytest.raises(NetlinkDataError),
+        patch.object(
+            client._ws,
+            "send_command",
+            new_callable=AsyncMock,
+            return_value={
+                "id": "command-id",
+                "status": "ok",
+                "data": "invalid",
+            },
+        ),
+    ):
+        await client.get_auth_methods()
 
 
 async def test_client_get_desk_status(aresponses: ResponsesMockServer) -> None:

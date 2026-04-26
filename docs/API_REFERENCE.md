@@ -434,6 +434,7 @@ The netlink-webserver supports a modern WebSocket command system with acknowledg
 | `command.display.volume` | `{"bus": "20", "attr": "volume", "value": 50}` | Set display volume (0-100) |
 | `command.browser.url` | `{"url": "https://example.com"}` | Set browser URL |
 | `command.browser.refresh` | `{}` | Refresh browser page |
+| `command.access.methods` | `{}` | Get configured login methods for `web_login` and `signing_maintenance` |
 
 ### Error Codes
 
@@ -490,3 +491,29 @@ Return the current daily access codes for privileged admin clients.
 **Notes**:
 - This endpoint is privileged and requires the device bearer token.
 - The payload exposes the current plaintext code and should be treated as sensitive.
+- `web_login` or `signing_maintenance` can be omitted when that login does not expose a current daily code.
+- Devices without this endpoint return HTTP 404, raised as `NetlinkNotFoundError`.
+
+### GET `/api/v1/auth/methods`
+Return the configured login methods for the web UI and signing maintenance UI.
+
+**Response**:
+```python
+{
+    "signing_maintenance": {
+        "pin": true,
+        "pin_length": 5,
+        "pin_type": "static"
+    },
+    "web_login": {
+        "password": true,
+        "pin": true,
+        "pin_length": 6,
+        "pin_type": "daily"
+    }
+}
+```
+
+**Notes**:
+- `pin_type` can be `static` or `daily`.
+- `await client.get_auth_methods()` uses `command.access.methods` when the WebSocket is connected and REST otherwise.

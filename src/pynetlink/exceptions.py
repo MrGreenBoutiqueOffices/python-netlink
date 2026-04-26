@@ -11,6 +11,10 @@ class NetlinkConnectionError(NetlinkError):
     """WebSocket or REST connection failed."""
 
 
+class NetlinkNotFoundError(NetlinkConnectionError):
+    """Requested REST resource was not found."""
+
+
 class NetlinkAuthenticationError(NetlinkError):
     """Invalid bearer token."""
 

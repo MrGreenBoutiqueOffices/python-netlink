@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from .access_codes import AccessCode, AccessCodes
+from .access_codes import AccessCode, AccessCodes, AuthMethod, AuthMethods
 from .browser import BrowserState
 from .desk import Desk, DeskState
 from .discovery import NetlinkDevice
@@ -12,6 +12,8 @@ from .system import DeviceInfo, MQTTStatus
 __all__ = [
     "AccessCode",
     "AccessCodes",
+    "AuthMethod",
+    "AuthMethods",
     "BrowserState",
     "Desk",
     "DeskState",

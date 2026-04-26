@@ -15,10 +15,12 @@ from .const import API_VERSION, DEFAULT_REQUEST_TIMEOUT
 from .exceptions import (
     NetlinkAuthenticationError,
     NetlinkConnectionError,
+    NetlinkNotFoundError,
     NetlinkTimeoutError,
 )
 from .models import (
     AccessCodes,
+    AuthMethods,
     BrowserState,
     Desk,
     DeviceInfo,
@@ -108,6 +110,9 @@ class NetlinkREST:
             if err.status == 401:
                 msg = f"Authentication failed for {self.host}"
                 raise NetlinkAuthenticationError(msg) from err
+            if err.status == 404:
+                msg = f"Resource not found at {url}"
+                raise NetlinkNotFoundError(msg) from err
             if err.status == 405:
                 msg = f"HTTP method {method} not allowed for {url}"
                 raise NetlinkConnectionError(msg) from err
@@ -472,6 +477,11 @@ class NetlinkREST:
         return await self._request("browser/refresh", method=METH_POST)
 
     # Admin endpoints
+    async def get_auth_methods(self) -> AuthMethods:
+        """Get configured authentication methods for web and signing logins."""
+        data = await self._request("auth/methods")
+        return AuthMethods.from_dict(data)
+
     async def get_access_codes(self) -> AccessCodes:
         """Get current daily access codes for privileged admin clients."""
         data = await self._request("admin/access-codes")
