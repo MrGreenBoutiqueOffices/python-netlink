@@ -16,6 +16,7 @@ from pynetlink.models import (
     DeviceInfo,
     Display,
     DisplayState,
+    DisplaySummary,
     NetlinkDevice,
 )
 
@@ -92,6 +93,48 @@ def test_display_state_bus_int_or_str(snapshot: SnapshotAssertion) -> None:
     )
     assert state_str.bus == "20"
     assert {"int": state_int.to_dict(), "str": state_str.to_dict()} == snapshot
+
+
+def test_display_connection_fields_from_dict() -> None:
+    """Display models should preserve expected/connected detection metadata."""
+    display = Display.from_dict(
+        {
+            "bus": 1,
+            "model": "Dell",
+            "type": "monitor",
+            "supports": {"power": True},
+            "expected": True,
+            "connected": False,
+            "last_scan_at": "2026-05-11T10:00:00+00:00",
+            "last_detected_at": "2026-05-11T08:59:45+00:00",
+            "missing_since": "2026-05-11T09:00:20+00:00",
+            "state": {
+                "power": None,
+                "source": None,
+                "brightness": None,
+                "volume": None,
+                "error": None,
+            },
+        }
+    )
+
+    assert display.expected is True
+    assert display.connected is False
+    assert display.missing_since == "2026-05-11T09:00:20+00:00"
+
+    summary = DisplaySummary.from_dict(
+        {
+            "id": 0,
+            "bus": 1,
+            "model": "Dell",
+            "type": "monitor",
+            "expected": True,
+            "connected": False,
+        }
+    )
+
+    assert summary.expected is True
+    assert summary.connected is False
 
 
 def test_browser_state_from_dict(snapshot: SnapshotAssertion) -> None:

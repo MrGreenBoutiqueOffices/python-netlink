@@ -54,6 +54,11 @@ class Display(DataClassDictMixin):
         state: Nested current state values (power, source, brightness, volume, error)
         serial_number: Serial number if available
         source_options: List of available input sources if supported
+        expected: True if this display is part of the normal hardware layout
+        connected: True if detected in the latest scan; False if missing
+        last_scan_at: ISO timestamp of the last detection scan
+        last_detected_at: ISO timestamp when last seen in a scan
+        missing_since: ISO timestamp of when the display first went missing
 
     """
 
@@ -64,6 +69,11 @@ class Display(DataClassDictMixin):
     state: DisplayState
     serial_number: str | None = None
     source_options: list[str] | None = None
+    expected: bool | None = None
+    connected: bool | None = None
+    last_scan_at: str | None = None
+    last_detected_at: str | None = None
+    missing_since: str | None = None
 
     def __post_init__(self) -> None:
         """Convert state dict to DisplayState if needed."""
@@ -87,6 +97,8 @@ class DisplaySummary(DataClassDictMixin):
         bus: Display I2C bus ID
         model: Display model name
         type: Device type
+        expected: True if this display is part of the normal hardware layout
+        connected: True if detected in the latest scan
 
     """
 
@@ -94,3 +106,8 @@ class DisplaySummary(DataClassDictMixin):
     bus: int | str
     model: str
     type: str
+    expected: bool | None = None
+    connected: bool | None = None
+    last_scan_at: str | None = None
+    last_detected_at: str | None = None
+    missing_since: str | None = None
