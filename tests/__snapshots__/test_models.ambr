@@ -75,6 +75,11 @@
   dict({
     'int': dict({
       'bus': 20,
+      'connected': None,
+      'expected': None,
+      'last_detected_at': None,
+      'last_scan_at': None,
+      'missing_since': None,
       'model': 'Test',
       'serial_number': None,
       'source_options': None,
@@ -91,6 +96,11 @@
     }),
     'str': dict({
       'bus': '20',
+      'connected': None,
+      'expected': None,
+      'last_detected_at': None,
+      'last_scan_at': None,
+      'missing_since': None,
       'model': 'Test',
       'serial_number': None,
       'source_options': None,
@@ -110,6 +120,11 @@
 # name: test_display_state_from_dict
   dict({
     'bus': 20,
+    'connected': None,
+    'expected': None,
+    'last_detected_at': None,
+    'last_scan_at': None,
+    'missing_since': None,
     'model': 'Dell U2723QE',
     'serial_number': 'ABC123XYZ',
     'source_options': list([

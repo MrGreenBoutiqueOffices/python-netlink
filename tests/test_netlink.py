@@ -183,6 +183,35 @@ async def test_client_on_display_state_uses_string_key() -> None:
     assert client.displays["20"].bus == 20
 
 
+async def test_client_on_display_state_preserves_connected_false() -> None:
+    """_on_display_state should keep the display in cache when connected=False."""
+    client = NetlinkClient(host="192.168.1.100", token="test-token")
+
+    display_data = {
+        "bus": 1,
+        "model": "Dell",
+        "type": "monitor",
+        "supports": {"power": True},
+        "expected": True,
+        "connected": False,
+        "missing_since": "2026-05-11T09:00:20+00:00",
+        "state": {
+            "power": None,
+            "source": None,
+            "brightness": None,
+            "volume": None,
+            "error": None,
+        },
+    }
+
+    await client._on_display_state(display_data)
+
+    assert "1" in client.displays
+    assert client.displays["1"].connected is False
+    assert client.displays["1"].expected is True
+    assert client.displays["1"].missing_since == "2026-05-11T09:00:20+00:00"
+
+
 async def test_client_on_device_info_nested_data() -> None:
     """Test _on_device_info extracts nested data structure."""
     client = NetlinkClient(host="192.168.1.100", token="test-token")
@@ -738,6 +767,54 @@ async def test_client_get_displays(aresponses: ResponsesMockServer) -> None:
 
         displays = await client.get_displays()
         assert len(displays) == 1
+
+
+async def test_client_get_displays_expected_disconnected(
+    aresponses: ResponsesMockServer,
+) -> None:
+    """get_displays should return expected-but-disconnected displays."""
+    aresponses.add(
+        "192.168.1.100",
+        "/api/v1/displays",
+        METH_GET,
+        aresponses.Response(
+            status=200,
+            headers={"Content-Type": "application/json"},
+            text=json.dumps(
+                [
+                    {
+                        "id": 0,
+                        "bus": 1,
+                        "model": "Dell",
+                        "type": "monitor",
+                        "expected": True,
+                        "connected": False,
+                    },
+                    {
+                        "id": 1,
+                        "bus": 20,
+                        "model": "WaveShare",
+                        "type": "tablet",
+                        "expected": True,
+                        "connected": True,
+                    },
+                ]
+            ),
+        ),
+    )
+
+    async with ClientSession() as session:
+        client = NetlinkClient(
+            host="192.168.1.100", token="test-token", session=session
+        )
+        client._rest._session = session
+
+        displays = await client.get_displays()
+
+    assert len(displays) == 2
+    dell = next(d for d in displays if d.bus == 1)
+    assert dell.expected is True
+    assert dell.connected is False
 
 
 async def test_client_get_display_status(aresponses: ResponsesMockServer) -> None:
