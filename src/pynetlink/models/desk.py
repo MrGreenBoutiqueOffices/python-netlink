@@ -26,8 +26,8 @@ class DeskState(DataClassDictMixin):
 
     """
 
-    mode: str
-    moving: bool
+    mode: str | None = None
+    moving: bool | None = None
     height: float | None = None
     error: str | None = None
     target: float | None = None
