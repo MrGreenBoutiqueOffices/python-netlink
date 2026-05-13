@@ -11,6 +11,7 @@ from zeroconf import ServiceBrowser, ServiceListener, Zeroconf
 
 from .const import (
     DEFAULT_REQUEST_TIMEOUT,
+    DISPLAY_COMMAND_TIMEOUT,
     EVENT_ACCESS_CODES_STATE,
     EVENT_DESK_STATE,
     EVENT_DEVICE_INFO,
@@ -413,12 +414,14 @@ class NetlinkClient:  # pylint: disable=too-many-public-methods
                 return await self._ws.send_command(
                     "command.display.power",
                     {"bus": str(bus_id), "attr": "power", "value": state},
+                    command_timeout=DISPLAY_COMMAND_TIMEOUT,
                 )
             return await self._rest.set_display_power(bus_id, state)
         if transport == "websocket":
             return await self._ws.send_command(
                 "command.display.power",
                 {"bus": str(bus_id), "attr": "power", "value": state},
+                command_timeout=DISPLAY_COMMAND_TIMEOUT,
             )
         return await self._rest.set_display_power(bus_id, state)
 
@@ -446,12 +449,14 @@ class NetlinkClient:  # pylint: disable=too-many-public-methods
                 return await self._ws.send_command(
                     "command.display.brightness",
                     {"bus": str(bus_id), "attr": "brightness", "value": brightness},
+                    command_timeout=DISPLAY_COMMAND_TIMEOUT,
                 )
             return await self._rest.set_display_brightness(bus_id, brightness)
         if transport == "websocket":
             return await self._ws.send_command(
                 "command.display.brightness",
                 {"bus": str(bus_id), "attr": "brightness", "value": brightness},
+                command_timeout=DISPLAY_COMMAND_TIMEOUT,
             )
         return await self._rest.set_display_brightness(bus_id, brightness)
 
@@ -479,12 +484,14 @@ class NetlinkClient:  # pylint: disable=too-many-public-methods
                 return await self._ws.send_command(
                     "command.display.volume",
                     {"bus": str(bus_id), "attr": "volume", "value": volume},
+                    command_timeout=DISPLAY_COMMAND_TIMEOUT,
                 )
             return await self._rest.set_display_volume(bus_id, volume)
         if transport == "websocket":
             return await self._ws.send_command(
                 "command.display.volume",
                 {"bus": str(bus_id), "attr": "volume", "value": volume},
+                command_timeout=DISPLAY_COMMAND_TIMEOUT,
             )
         return await self._rest.set_display_volume(bus_id, volume)
 
@@ -512,12 +519,14 @@ class NetlinkClient:  # pylint: disable=too-many-public-methods
                 return await self._ws.send_command(
                     "command.display.source",
                     {"bus": str(bus_id), "attr": "source", "value": source},
+                    command_timeout=DISPLAY_COMMAND_TIMEOUT,
                 )
             return await self._rest.set_display_source(bus_id, source)
         if transport == "websocket":
             return await self._ws.send_command(
                 "command.display.source",
                 {"bus": str(bus_id), "attr": "source", "value": source},
+                command_timeout=DISPLAY_COMMAND_TIMEOUT,
             )
         return await self._rest.set_display_source(bus_id, source)
 

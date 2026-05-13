@@ -3,6 +3,7 @@
 # pylint: disable=protected-access
 from __future__ import annotations
 
+import asyncio
 import json
 from typing import Any
 from unittest.mock import AsyncMock
@@ -718,15 +719,16 @@ async def test_request_creates_session(aresponses: ResponsesMockServer) -> None:
 
 async def test_timeout_error() -> None:
     """Test request timeout handling."""
-    async with ClientSession() as session:
-        rest = NetlinkREST(
-            host="192.168.1.100", token="test-token", request_timeout=0.001
-        )
-        rest._session = session
 
-        # Use a very long delay endpoint simulation
-        with pytest.raises(NetlinkTimeoutError):
-            await rest.get_desk_status()
+    async def slow_request(*_args: Any, **_kwargs: Any) -> None:
+        await asyncio.sleep(1)
+
+    rest = NetlinkREST(host="192.168.1.100", token="test-token", request_timeout=0.001)
+    rest._session = AsyncMock(spec=ClientSession)
+    rest._session.request = AsyncMock(side_effect=slow_request)
+
+    with pytest.raises(NetlinkTimeoutError):
+        await rest.get_desk_status()
 
 
 async def test_bearer_token_header(aresponses: ResponsesMockServer) -> None:

@@ -10,13 +10,15 @@ from pynetlink.models import Desk, DeskState, Display, DisplayState
 
 def test_desk_invalid_state_raises_netlink_data_error() -> None:
     """Test Desk raises NetlinkDataError when state dict is invalid."""
-    # Missing required fields
-    with pytest.raises(NetlinkDataError, match="Incomplete or invalid desk state data"):
-        Desk(
-            capabilities={},
-            inventory={},
-            state={"height": 75.0},  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
-        )
+    # Minimal state is valid; REST responses may omit mode/moving.
+    desk = Desk(
+        capabilities={},
+        inventory={},
+        state={"height": 75.0},  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
+    )
+    assert desk.state.height == 75.0
+    assert desk.state.mode is None
+    assert desk.state.moving is None
 
     # Invalid field types
     with pytest.raises(NetlinkDataError, match="Incomplete or invalid desk state data"):

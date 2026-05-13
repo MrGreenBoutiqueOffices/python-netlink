@@ -13,6 +13,7 @@ from aresponses import ResponsesMockServer
 from syrupy.assertion import SnapshotAssertion
 
 from pynetlink import NetlinkClient, NetlinkDataError
+from pynetlink.const import DISPLAY_COMMAND_TIMEOUT
 from pynetlink.models import AuthMethods
 
 from . import load_fixtures
@@ -881,6 +882,7 @@ async def test_client_set_display_power_auto_websocket() -> None:
         mock_send.assert_called_once_with(
             "command.display.power",
             {"bus": "1", "attr": "power", "value": "off"},
+            command_timeout=DISPLAY_COMMAND_TIMEOUT,
         )
 
 
@@ -954,6 +956,7 @@ async def test_client_set_display_brightness_websocket_transport() -> None:
         mock_send.assert_called_once_with(
             "command.display.brightness",
             {"bus": "2", "attr": "brightness", "value": 70},
+            command_timeout=DISPLAY_COMMAND_TIMEOUT,
         )
 
 
@@ -1027,6 +1030,7 @@ async def test_client_set_display_volume_auto_websocket() -> None:
         mock_send.assert_called_once_with(
             "command.display.volume",
             {"bus": "3", "attr": "volume", "value": 30},
+            command_timeout=DISPLAY_COMMAND_TIMEOUT,
         )
 
 
@@ -1076,6 +1080,7 @@ async def test_client_set_display_volume_websocket() -> None:
         mock_send.assert_called_once_with(
             "command.display.volume",
             {"bus": "1", "attr": "volume", "value": 40},
+            command_timeout=DISPLAY_COMMAND_TIMEOUT,
         )
 
 
@@ -1118,6 +1123,7 @@ async def test_client_set_display_source_auto_websocket() -> None:
         mock_send.assert_called_once_with(
             "command.display.source",
             {"bus": "4", "attr": "source", "value": "DP"},
+            command_timeout=DISPLAY_COMMAND_TIMEOUT,
         )
 
 
@@ -1603,6 +1609,7 @@ async def test_client_set_display_power_websocket() -> None:
         mock_send.assert_called_once_with(
             "command.display.power",
             {"bus": "0", "attr": "power", "value": "on"},
+            command_timeout=DISPLAY_COMMAND_TIMEOUT,
         )
 
 
@@ -1621,6 +1628,7 @@ async def test_client_set_display_brightness_auto() -> None:
         mock_send.assert_called_once_with(
             "command.display.brightness",
             {"bus": "0", "attr": "brightness", "value": 80},
+            command_timeout=DISPLAY_COMMAND_TIMEOUT,
         )
 
 
@@ -1643,6 +1651,7 @@ async def test_client_set_display_source_websocket() -> None:
         mock_send.assert_called_once_with(
             "command.display.source",
             {"bus": "2", "attr": "source", "value": "USBC"},
+            command_timeout=DISPLAY_COMMAND_TIMEOUT,
         )
 
 
