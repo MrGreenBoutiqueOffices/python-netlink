@@ -35,6 +35,13 @@
       "matchManagers": ["github-actions"],
       "matchUpdateTypes": ["minor", "patch"],
       "automerge": true
+    },
+    {
+      "description": "Avoid repeated PRs when github/codeql-action moves its v4 tag.",
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": ["github/codeql-action"],
+      "matchUpdateTypes": ["digest"],
+      "enabled": false
     }
   ]
 }
