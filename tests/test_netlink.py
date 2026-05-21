@@ -12,7 +12,7 @@ from aiohttp.hdrs import METH_GET, METH_POST, METH_PUT
 from aresponses import ResponsesMockServer
 from syrupy.assertion import SnapshotAssertion
 
-from pynetlink import NetlinkClient, NetlinkDataError
+from pynetlink import NetlinkClient, NetlinkConnectionError, NetlinkDataError
 from pynetlink.const import DISPLAY_COMMAND_TIMEOUT
 from pynetlink.models import AuthMethods
 
@@ -745,6 +745,32 @@ async def test_client_calibrate_desk_rest_transport(
         await client.calibrate_desk(transport="rest")
 
 
+async def test_client_reboot_device_uses_websocket() -> None:
+    """Test reboot_device sends the system reboot command via WebSocket."""
+    client = NetlinkClient(host="192.168.1.100", token="test-token")
+    client._ws._connected = True
+
+    with patch.object(
+        client._ws,
+        "send_command",
+        new_callable=AsyncMock,
+        return_value={"status": "ok"},
+    ) as mock_send:
+        await client.reboot_device()
+        mock_send.assert_called_once_with("command.system.reboot")
+
+
+async def test_client_reboot_device_rejects_rest_transport() -> None:
+    """Test reboot_device rejects REST transport because no REST endpoint exists."""
+    client = NetlinkClient(host="192.168.1.100", token="test-token")
+
+    with pytest.raises(
+        NetlinkConnectionError,
+        match="Device reboot is only available via WebSocket",
+    ):
+        await client.reboot_device(transport="rest")
+
+
 async def test_client_get_displays(aresponses: ResponsesMockServer) -> None:
     """Test get_displays delegates to REST."""
     aresponses.add(
@@ -1217,7 +1243,7 @@ async def test_client_set_browser_url_auto_websocket() -> None:
     ) as mock_send:
         await client.set_browser_url("https://example.com/dashboard")
         mock_send.assert_called_once_with(
-            "command.browser.url",
+            "command.browser.set_url",
             {"url": "https://example.com/dashboard"},
         )
 
@@ -1238,7 +1264,7 @@ async def test_client_set_browser_url_websocket_transport() -> None:
             transport="websocket",
         )
         mock_send.assert_called_once_with(
-            "command.browser.url",
+            "command.browser.set_url",
             {"url": "https://example.com/app"},
         )
 
