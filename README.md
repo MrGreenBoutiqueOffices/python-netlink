@@ -84,6 +84,7 @@ The examples folder contains comprehensive guides for:
 - Desk control (height, calibration, presets)
 - Display control (power, brightness, volume, input source)
 - Browser control
+- System control (device reboot)
 - Error handling
 - Advanced usage patterns
 
@@ -126,6 +127,9 @@ displays = await client.get_displays()
 await client.set_display_power(bus_id=0, state="on")
 await client.set_display_brightness(bus_id=0, brightness=80)
 await client.set_display_source(bus_id=0, source="HDMI1")
+
+# System control
+await client.reboot_device()
 ```
 
 More examples:

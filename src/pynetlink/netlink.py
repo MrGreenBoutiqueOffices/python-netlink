@@ -17,7 +17,7 @@ from .const import (
     EVENT_DEVICE_INFO,
     EVENT_DISPLAY_STATE,
 )
-from .exceptions import NetlinkDataError
+from .exceptions import NetlinkConnectionError, NetlinkDataError
 from .models import (
     AccessCodes,
     AuthMethods,
@@ -560,10 +560,16 @@ class NetlinkClient:  # pylint: disable=too-many-public-methods
         """
         if transport == "auto":
             if self._ws.connected:
-                return await self._ws.send_command("command.browser.url", {"url": url})
+                return await self._ws.send_command(
+                    "command.browser.set_url",
+                    {"url": url},
+                )
             return await self._rest.set_browser_url(url)
         if transport == "websocket":
-            return await self._ws.send_command("command.browser.url", {"url": url})
+            return await self._ws.send_command(
+                "command.browser.set_url",
+                {"url": url},
+            )
         return await self._rest.set_browser_url(url)
 
     async def refresh_browser(self, transport: str = "auto") -> dict[str, Any]:
@@ -585,6 +591,29 @@ class NetlinkClient:  # pylint: disable=too-many-public-methods
         if transport == "websocket":
             return await self._ws.send_command("command.browser.refresh")
         return await self._rest.refresh_browser()
+
+    async def reboot_device(self, transport: str = "auto") -> dict[str, Any]:
+        """Reboot the NetLink device via the webserver command channel.
+
+        Args:
+        ----
+            transport: Transport method. Only "auto" and "websocket" are supported
+                because the webserver exposes reboot as a privileged WebSocket command.
+
+        Returns:
+        -------
+            Command acknowledgement response
+
+        Raises:
+        ------
+            NetlinkConnectionError: WebSocket is not connected, or an unsupported
+                transport was requested
+
+        """
+        if transport not in {"auto", "websocket"}:
+            msg = "Device reboot is only available via WebSocket"
+            raise NetlinkConnectionError(msg)
+        return await self._ws.send_command("command.system.reboot")
 
     async def get_access_codes(self) -> AccessCodes:
         """Get current daily access codes for privileged admin clients."""
