@@ -1324,14 +1324,14 @@ docs = ["sphinx"]
 
 [[package]]
 name = "syrupy"
-version = "5.3.4"
+version = "5.4.0"
 description = "Pytest Snapshot Test Utility"
 optional = false
 python-versions = ">=3.10"
 groups = ["dev"]
 files = [
-    {file = "syrupy-5.3.4-py3-none-any.whl", hash = "sha256:409348aa20afc4b7dab7c965331de0cd79ab46977877fb189014ce9294e947e5"},
-    {file = "syrupy-5.3.4.tar.gz", hash = "sha256:10f192655a2d42473ad5772653e64b281f6823fe5e30458d92f8ca8e882884c1"},
+    {file = "syrupy-5.4.0-py3-none-any.whl", hash = "sha256:3079017f0c6d3c1b293b57ad2af15cc7851d8eceba922896bdb3bc4834df4ce8"},
+    {file = "syrupy-5.4.0.tar.gz", hash = "sha256:cc166e6331c735b7acc93074f9b171dd1b130444e944b185aa5123767b49b76f"},
 ]
 
 [package.dependencies]
@@ -1648,4 +1648,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "dfa8c6eed051451767448be0aa0c48b202e5f0f798ca64b8aefdf9d70bbedb9e"
+content-hash = "81e46e549f71224fcc44eb846498b026c049eebec3dc15195e99e9d3a98ba4e8"
