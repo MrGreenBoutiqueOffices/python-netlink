@@ -51,6 +51,7 @@ pip install pynetlink
 import asyncio
 from pynetlink import NetlinkClient
 
+
 async def main() -> None:
     """Quick start example."""
     async with NetlinkClient("192.168.1.100", "your-token") as client:
@@ -69,6 +70,7 @@ async def main() -> None:
 
         # Optional: Force specific transport if needed
         await client.set_desk_height(110.0, transport="rest")
+
 
 if __name__ == "__main__":
     asyncio.run(main())
