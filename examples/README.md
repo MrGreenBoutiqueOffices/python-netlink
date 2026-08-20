@@ -57,6 +57,9 @@ Focused real-time desk displaying example.
 ### [`realtime/display_state_listener.py`](./realtime/display_state_listener.py)
 Real-time display state listener per bus.
 
+### [`realtime/authorization_listener.py`](./realtime/authorization_listener.py)
+Optional authorization capability discovery and typed command denial handling.
+
 ### [`rest/rest_only.py`](./rest/rest_only.py)
 REST-only desk and display control.
 
@@ -160,6 +163,39 @@ async def auto_connect() -> None:
 ## Real-time Events
 
 Subscribe to WebSocket events for real-time state updates:
+
+### Authorization Capability Discovery
+
+Newer servers publish the effective connection policy through
+`authorization.state`. The cached state is optional so clients remain compatible
+with older servers that do not emit this event. Its command set and event-audience
+mapping are immutable snapshots.
+
+```python
+from pynetlink import EVENT_AUTHORIZATION_STATE, NetlinkClient
+
+
+async def inspect_authorization() -> None:
+    async with NetlinkClient(host, token) as client:
+        @client.on(EVENT_AUTHORIZATION_STATE)
+        async def on_authorization_change(_data: dict) -> None:
+            state = client.authorization_state
+            if state is not None:
+                print(sorted(state.allowed_commands))
+                print(state.maintenance.valid_until)
+
+        await client.connect()
+        await asyncio.sleep(1)
+
+        # None means unknown, usually because this is an older server.
+        if client.authorization_state is None:
+            print("Authorization discovery unavailable")
+```
+
+Capability discovery is informational; the server remains authoritative. When a
+WebSocket acknowledgement returns `unauthorized`, `maintenance_required`, or
+`maintenance_grant_expired`, pynetlink raises the corresponding typed exception.
+These denials are never retried through REST.
 
 ### Subscribe to All Events
 

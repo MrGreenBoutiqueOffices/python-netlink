@@ -2,6 +2,7 @@
 
 from .const import (
     EVENT_ACCESS_CODES_STATE,
+    EVENT_AUTHORIZATION_STATE,
     EVENT_BROWSER_STATE,
     EVENT_DESK_STATE,
     EVENT_DEVICE_INFO,
@@ -11,18 +12,23 @@ from .const import (
 )
 from .exceptions import (
     NetlinkAuthenticationError,
+    NetlinkAuthorizationError,
     NetlinkCommandError,
     NetlinkConnectionError,
     NetlinkDataError,
     NetlinkError,
+    NetlinkMaintenanceGrantExpiredError,
+    NetlinkMaintenanceRequiredError,
     NetlinkNotFoundError,
     NetlinkTimeoutError,
+    NetlinkUnauthorizedError,
 )
 from .models import (
     AccessCode,
     AccessCodes,
     AuthMethod,
     AuthMethods,
+    AuthorizationState,
     BrowserState,
     Desk,
     DeskState,
@@ -30,6 +36,7 @@ from .models import (
     Display,
     DisplayState,
     DisplaySummary,
+    MaintenanceAuthorization,
     MQTTStatus,
     NetlinkDevice,
 )
@@ -40,6 +47,7 @@ discover_devices = NetlinkClient.discover_devices
 
 __all__ = [
     "EVENT_ACCESS_CODES_STATE",
+    "EVENT_AUTHORIZATION_STATE",
     "EVENT_BROWSER_STATE",
     "EVENT_DESK_STATE",
     "EVENT_DEVICE_INFO",
@@ -50,6 +58,7 @@ __all__ = [
     "AccessCodes",
     "AuthMethod",
     "AuthMethods",
+    "AuthorizationState",
     "BrowserState",
     "Desk",
     "DeskState",
@@ -58,14 +67,19 @@ __all__ = [
     "DisplayState",
     "DisplaySummary",
     "MQTTStatus",
+    "MaintenanceAuthorization",
     "NetlinkAuthenticationError",
+    "NetlinkAuthorizationError",
     "NetlinkClient",
     "NetlinkCommandError",
     "NetlinkConnectionError",
     "NetlinkDataError",
     "NetlinkDevice",
     "NetlinkError",
+    "NetlinkMaintenanceGrantExpiredError",
+    "NetlinkMaintenanceRequiredError",
     "NetlinkNotFoundError",
     "NetlinkTimeoutError",
+    "NetlinkUnauthorizedError",
     "discover_devices",
 ]

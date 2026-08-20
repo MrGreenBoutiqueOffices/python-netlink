@@ -6,6 +6,44 @@ Based on: `blocks/netlink-webserver` implementation
 
 ## WebSocket Events
 
+### `authorization.state`
+
+Sent to the connected socket after authentication and whenever its effective
+maintenance grant changes. This optional event is absent on older webservers.
+
+```python
+{
+    "policy_version": 1,
+    "allowed_commands": ["command.desk.height", "command.desk.stop"],
+    "event_audiences": {"access_codes.state": False},
+    "maintenance": {
+        "granted": False,
+        "valid_until": None,
+    },
+}
+```
+
+`NetlinkClient.authorization_state` contains the latest typed
+`AuthorizationState`, or `None` when the server has not advertised one. The state
+is cleared on disconnect because grants are connection-bound. `allowed_commands`
+is a `frozenset` and `event_audiences` is a read-only mapping, so callers cannot
+mutate the cached policy.
+
+```python
+from pynetlink import EVENT_AUTHORIZATION_STATE
+
+
+@client.on(EVENT_AUTHORIZATION_STATE)
+async def authorization_changed(_data: dict) -> None:
+    state = client.authorization_state
+    if state is not None and state.allows_command("command.browser.refresh"):
+        print("Browser refresh is currently allowed")
+```
+
+The server remains authoritative: discovery is useful for explaining available
+actions, but clients must still handle command acknowledgement errors. No bearer
+tokens, access codes, hashes, or internal configuration are present in this model.
+
 ### `device.info`
 Sent via WebSocket with basic device information.
 
@@ -438,6 +476,14 @@ Common error messages:
 - `"Display not found"` - Invalid display bus ID
 - `"Command timeout"` - Command execution timeout (5s)
 
+Stable authorization errors map to public `NetlinkCommandError` subclasses:
+
+| Error | Exception |
+|---|---|
+| `unauthorized` | `NetlinkUnauthorizedError` |
+| `maintenance_required` | `NetlinkMaintenanceRequiredError` |
+| `maintenance_grant_expired` | `NetlinkMaintenanceGrantExpiredError` |
+
 ### Transport Selection (pynetlink)
 
 ```python
@@ -458,6 +504,10 @@ async with NetlinkClient(host, token) as client:
 raises a connection error. A command acknowledgement timeout is not retried,
 because the device may already have executed the command. Explicit command
 rejections are also returned without a REST retry.
+
+Authorization denials are explicit command rejections and are therefore never
+retried through REST. This rule prevents a denied WebSocket command from bypassing
+the server's Socket.IO policy.
 
 ### GET `/api/v1/admin/access-codes`
 Return the current daily access codes for privileged admin clients.

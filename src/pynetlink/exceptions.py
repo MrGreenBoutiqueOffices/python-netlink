@@ -46,5 +46,21 @@ class NetlinkCommandError(NetlinkError):
         self.error_details = error_details
 
 
+class NetlinkAuthorizationError(NetlinkCommandError):
+    """Command was denied by the server authorization policy."""
+
+
+class NetlinkUnauthorizedError(NetlinkAuthorizationError):
+    """The current client policy does not permit the command."""
+
+
+class NetlinkMaintenanceRequiredError(NetlinkAuthorizationError):
+    """The command requires an active maintenance grant."""
+
+
+class NetlinkMaintenanceGrantExpiredError(NetlinkAuthorizationError):
+    """The command's previous maintenance grant has expired."""
+
+
 class NetlinkDataError(NetlinkError):
     """Invalid or incomplete data received from device."""

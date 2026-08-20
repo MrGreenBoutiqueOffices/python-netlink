@@ -19,9 +19,13 @@ from .const import (
 )
 from .exceptions import (
     NetlinkAuthenticationError,
+    NetlinkAuthorizationError,
     NetlinkCommandError,
     NetlinkConnectionError,
+    NetlinkMaintenanceGrantExpiredError,
+    NetlinkMaintenanceRequiredError,
     NetlinkTimeoutError,
+    NetlinkUnauthorizedError,
 )
 
 if TYPE_CHECKING:
@@ -30,6 +34,11 @@ if TYPE_CHECKING:
 _LOGGER = logging.getLogger(__name__)
 _LIFECYCLE_EVENTS = frozenset({"connect", "connect_error", "disconnect"})
 _AUTH_ERROR_MARKERS = ("auth", "forbidden", "invalid token", "unauthorized")
+_AUTHORIZATION_ERRORS: dict[str, type[NetlinkAuthorizationError]] = {
+    "unauthorized": NetlinkUnauthorizedError,
+    "maintenance_required": NetlinkMaintenanceRequiredError,
+    "maintenance_grant_expired": NetlinkMaintenanceGrantExpiredError,
+}
 
 
 @dataclass
@@ -109,11 +118,10 @@ class NetlinkWebSocket:
                 self._sio.on("command_ack")(self._on_command_ack)
 
                 # Lifecycle callbacks are emitted by the internal handlers above.
-                for event, callbacks in self._callbacks.items():
+                for event in self._callbacks:
                     if event in _LIFECYCLE_EVENTS:
                         continue
-                    for callback in callbacks:
-                        self._sio.on(event)(self._wrap_callback(callback))
+                    self._sio.on(event)(self._wrap_event(event))
 
             self._last_connect_error = None
             try:
@@ -169,20 +177,21 @@ class NetlinkWebSocket:
 
         def decorator(callback: Callable) -> Callable:
             # Store original callback in our registry
-            if event not in self._callbacks:
+            is_new_event = event not in self._callbacks
+            if is_new_event:
                 self._callbacks[event] = []
             self._callbacks[event].append(callback)
 
-            # Register wrapper with Socket.IO
-            if self._sio and event not in _LIFECYCLE_EVENTS:
-                self._sio.on(event)(self._wrap_callback(callback))
+            # Socket.IO stores one handler per event, so register one dispatcher.
+            if self._sio and event not in _LIFECYCLE_EVENTS and is_new_event:
+                self._sio.on(event)(self._wrap_event(event))
 
             return callback
 
         return decorator
 
-    def _wrap_callback(self, callback: Callable) -> Callable:
-        """Wrap a callback to normalize Socket.IO event payloads."""
+    def _wrap_event(self, event: str) -> Callable:
+        """Create one Socket.IO dispatcher for all callbacks of an event."""
 
         async def wrapper(*args: Any) -> None:
             if len(args) > 1:
@@ -196,10 +205,7 @@ class NetlinkWebSocket:
                 if isinstance(raw_data, dict)
                 else raw_data
             )
-            if asyncio.iscoroutinefunction(callback):
-                await callback(data)
-            else:
-                callback(data)
+            await self.emit_to_callbacks(event, data)
 
         return wrapper
 
@@ -218,6 +224,24 @@ class NetlinkWebSocket:
                     await callback(data)
                 else:
                     callback(data)
+
+    def _schedule_lifecycle_callbacks(self, event: str, data: Any) -> None:
+        """Run sync lifecycle callbacks now and schedule async callbacks."""
+        async_callbacks = []
+        for callback in self._callbacks.get(event, []):
+            if asyncio.iscoroutinefunction(callback):
+                async_callbacks.append(callback)
+            else:
+                callback(data)
+
+        if not async_callbacks:
+            return
+
+        async def emit_async_callbacks() -> None:
+            for callback in async_callbacks:
+                await callback(data)
+
+        asyncio.create_task(emit_async_callbacks())  # noqa: RUF006
 
     async def send_command(
         self,
@@ -307,8 +331,7 @@ class NetlinkWebSocket:
         self._connected = True
         self._last_connect_error = None
 
-        # Emit connect event to user callbacks (fire-and-forget task)
-        asyncio.create_task(self.emit_to_callbacks("connect", {}))  # noqa: RUF006
+        self._schedule_lifecycle_callbacks("connect", {})
 
     def _on_connect_error(self, data: Any = None) -> None:
         """Translate a Socket.IO connection error without exposing credentials."""
@@ -330,11 +353,9 @@ class NetlinkWebSocket:
         self._last_connect_error = error
 
         _LOGGER.warning("Connection to %s failed (%s)", self.host, error_type)
-        asyncio.create_task(  # noqa: RUF006
-            self.emit_to_callbacks(
-                "connect_error",
-                {"type": error_type, "message": str(error)},
-            )
+        self._schedule_lifecycle_callbacks(
+            "connect_error",
+            {"type": error_type, "message": str(error)},
         )
 
     def _on_disconnect(self, _reason: Any = None) -> None:
@@ -342,8 +363,7 @@ class NetlinkWebSocket:
         _LOGGER.warning("Disconnected from %s", self.host)
         self._connected = False
 
-        # Emit disconnect event to user callbacks (fire-and-forget task)
-        asyncio.create_task(self.emit_to_callbacks("disconnect", {}))  # noqa: RUF006
+        self._schedule_lifecycle_callbacks("disconnect", {})
 
         # Clear first so repeated disconnect callbacks cannot fail a future twice.
         pending_commands = list(self._pending_commands.items())
@@ -396,8 +416,13 @@ class NetlinkWebSocket:
             # Command failed
             error_msg = data.get("error", "Command execution failed")
             command_type = data.get("command", "unknown")
+            error_class = (
+                _AUTHORIZATION_ERRORS.get(error_msg, NetlinkCommandError)
+                if isinstance(error_msg, str)
+                else NetlinkCommandError
+            )
             future.set_exception(
-                NetlinkCommandError(
+                error_class(
                     error_msg,
                     command=command_type,
                     error_details=data,

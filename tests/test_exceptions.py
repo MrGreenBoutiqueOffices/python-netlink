@@ -4,8 +4,35 @@ from __future__ import annotations
 
 import pytest
 
-from pynetlink.exceptions import NetlinkDataError
+from pynetlink.exceptions import (
+    NetlinkAuthorizationError,
+    NetlinkCommandError,
+    NetlinkDataError,
+    NetlinkError,
+    NetlinkMaintenanceGrantExpiredError,
+    NetlinkMaintenanceRequiredError,
+    NetlinkUnauthorizedError,
+)
 from pynetlink.models import Desk, DeskState, Display, DisplayState
+
+
+@pytest.mark.parametrize(
+    "exception_type",
+    [
+        NetlinkUnauthorizedError,
+        NetlinkMaintenanceRequiredError,
+        NetlinkMaintenanceGrantExpiredError,
+    ],
+)
+def test_authorization_errors_preserve_public_exception_hierarchy(
+    exception_type: type[NetlinkAuthorizationError],
+) -> None:
+    """Typed authorization denials remain compatible with command handlers."""
+    error = exception_type("denied", command="command.system.reboot")
+
+    assert isinstance(error, NetlinkAuthorizationError)
+    assert isinstance(error, NetlinkCommandError)
+    assert isinstance(error, NetlinkError)
 
 
 def test_desk_invalid_state_raises_netlink_data_error() -> None:
