@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from .access_codes import AccessCode, AccessCodes, AuthMethod, AuthMethods
+from .authorization import AuthorizationState, MaintenanceAuthorization
 from .browser import BrowserState
 from .desk import Desk, DeskState
 from .discovery import NetlinkDevice
@@ -14,6 +15,7 @@ __all__ = [
     "AccessCodes",
     "AuthMethod",
     "AuthMethods",
+    "AuthorizationState",
     "BrowserState",
     "Desk",
     "DeskState",
@@ -22,5 +24,6 @@ __all__ = [
     "DisplayState",
     "DisplaySummary",
     "MQTTStatus",
+    "MaintenanceAuthorization",
     "NetlinkDevice",
 ]

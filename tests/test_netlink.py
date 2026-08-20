@@ -13,13 +13,17 @@ from aresponses import ResponsesMockServer
 from syrupy.assertion import SnapshotAssertion
 
 from pynetlink import (
+    AuthorizationState,
     NetlinkClient,
     NetlinkCommandError,
     NetlinkConnectionError,
     NetlinkDataError,
+    NetlinkMaintenanceGrantExpiredError,
+    NetlinkMaintenanceRequiredError,
     NetlinkTimeoutError,
+    NetlinkUnauthorizedError,
 )
-from pynetlink.const import DISPLAY_COMMAND_TIMEOUT
+from pynetlink.const import DISPLAY_COMMAND_TIMEOUT, EVENT_AUTHORIZATION_STATE
 from pynetlink.models import AuthMethods
 
 from . import load_fixtures
@@ -146,6 +150,93 @@ async def test_client_access_codes_property(snapshot: SnapshotAssertion) -> None
 
     assert client.access_codes is not None
     assert client.access_codes.to_dict() == snapshot
+
+
+async def test_client_authorization_state_updates_before_event_callback() -> None:
+    """Authorization events update the typed facade before user callbacks run."""
+    client = NetlinkClient(host="192.168.1.100", token="test-token")
+    seen: list[AuthorizationState | None] = []
+
+    @client.on(EVENT_AUTHORIZATION_STATE)
+    async def handle_authorization(_data: dict) -> None:
+        seen.append(client.authorization_state)
+
+    payload = {
+        "policy_version": 1,
+        "allowed_commands": ["command.desk.height"],
+        "event_audiences": {"access_codes.state": False},
+        "maintenance": {
+            "granted": True,
+            "valid_until": "2026-08-20T12:00:00Z",
+        },
+    }
+
+    assert client.authorization_state is None
+    await client._ws.emit_to_callbacks(EVENT_AUTHORIZATION_STATE, payload)
+
+    assert seen == [client.authorization_state]
+    assert client.authorization_state is not None
+    assert client.authorization_state.allows_command("command.desk.height")
+    assert client.authorization_state.maintenance.granted is True
+
+
+async def test_client_authorization_state_accepts_envelope_and_json() -> None:
+    """Authorization state accepts normal envelopes and fixture-style JSON."""
+    client = NetlinkClient(host="192.168.1.100", token="test-token")
+    payload = {
+        "data": {
+            "policy_version": 1,
+            "allowed_commands": [],
+            "event_audiences": {},
+            "maintenance": {"granted": False, "valid_until": None},
+        }
+    }
+
+    await client._on_authorization_state(json.dumps(payload))
+
+    assert client.authorization_state is not None
+    assert client.authorization_state.allowed_commands == frozenset()
+
+
+async def test_client_authorization_state_invalid_update_is_atomic() -> None:
+    """An invalid event does not replace the latest valid policy snapshot."""
+    client = NetlinkClient(host="192.168.1.100", token="test-token")
+    await client._on_authorization_state(
+        {
+            "policy_version": 1,
+            "allowed_commands": ["command.desk.stop"],
+            "event_audiences": {},
+            "maintenance": {"granted": False, "valid_until": None},
+        }
+    )
+    previous_state = client.authorization_state
+
+    with pytest.raises(NetlinkDataError):
+        await client._on_authorization_state({"policy_version": 1})
+
+    assert client.authorization_state is previous_state
+
+
+async def test_client_authorization_state_clears_on_reconnect() -> None:
+    """Old servers remain supported and connection-bound state is not retained."""
+    client = NetlinkClient(host="192.168.1.100", token="test-token")
+
+    assert client.authorization_state is None
+    await client._on_authorization_state(
+        {
+            "policy_version": 1,
+            "allowed_commands": ["command.system.reboot"],
+            "event_audiences": {},
+            "maintenance": {
+                "granted": True,
+                "valid_until": "2026-08-20T12:00:00Z",
+            },
+        }
+    )
+
+    client._ws._on_disconnect()
+
+    assert client.authorization_state is None
 
 
 async def test_client_on_desk_state_nested_data() -> None:
@@ -1196,6 +1287,18 @@ async def test_client_set_display_source_auto_fallback_after_websocket_error() -
         NetlinkTimeoutError("Command acknowledgement timed out"),
         NetlinkCommandError(
             "Display command failed",
+            command="command.display.source",
+        ),
+        NetlinkUnauthorizedError(
+            "unauthorized",
+            command="command.display.source",
+        ),
+        NetlinkMaintenanceRequiredError(
+            "maintenance_required",
+            command="command.display.source",
+        ),
+        NetlinkMaintenanceGrantExpiredError(
+            "maintenance_grant_expired",
             command="command.display.source",
         ),
     ],

@@ -13,6 +13,7 @@ from .const import (
     DEFAULT_REQUEST_TIMEOUT,
     DISPLAY_COMMAND_TIMEOUT,
     EVENT_ACCESS_CODES_STATE,
+    EVENT_AUTHORIZATION_STATE,
     EVENT_DESK_STATE,
     EVENT_DEVICE_INFO,
     EVENT_DISPLAY_STATE,
@@ -21,6 +22,7 @@ from .exceptions import NetlinkConnectionError, NetlinkDataError
 from .models import (
     AccessCodes,
     AuthMethods,
+    AuthorizationState,
     BrowserState,
     Desk,
     DeskState,
@@ -78,6 +80,11 @@ class NetlinkClient:  # pylint: disable=too-many-public-methods
     )
     _device_info: DeviceInfo | None = field(default=None, init=False, repr=False)
     _access_codes: AccessCodes | None = field(default=None, init=False, repr=False)
+    _authorization_state: AuthorizationState | None = field(
+        default=None,
+        init=False,
+        repr=False,
+    )
 
     def __post_init__(self) -> None:
         """Initialize WebSocket and REST clients."""
@@ -89,6 +96,8 @@ class NetlinkClient:  # pylint: disable=too-many-public-methods
         self._ws.on(EVENT_DISPLAY_STATE)(self._on_display_state)
         self._ws.on(EVENT_DEVICE_INFO)(self._on_device_info)
         self._ws.on(EVENT_ACCESS_CODES_STATE)(self._on_access_codes_state)
+        self._ws.on(EVENT_AUTHORIZATION_STATE)(self._on_authorization_state)
+        self._ws.on("disconnect")(self._on_websocket_disconnect)
 
     async def __aenter__(self) -> Self:
         """Async context manager entry."""
@@ -113,6 +122,7 @@ class NetlinkClient:  # pylint: disable=too-many-public-methods
     async def disconnect(self) -> None:
         """Disconnect WebSocket and close session."""
         await self._ws.disconnect()
+        self._authorization_state = None
         await self._rest.close()
         if self.session and self._close_session:
             await self.session.close()
@@ -197,6 +207,16 @@ class NetlinkClient:  # pylint: disable=too-many-public-methods
         access_code_data = payload.get("data", payload)
         self._access_codes = AccessCodes.from_dict(access_code_data)
 
+    async def _on_authorization_state(self, data: str | dict[str, Any]) -> None:
+        """Retain the latest effective authorization policy from WebSocket."""
+        payload = json.loads(data) if isinstance(data, str) else data
+        authorization_data = payload.get("data", payload)
+        self._authorization_state = AuthorizationState.from_dict(authorization_data)
+
+    def _on_websocket_disconnect(self, _data: dict[str, Any]) -> None:
+        """Discard connection-bound authorization state after a disconnect."""
+        self._authorization_state = None
+
     # Properties for WebSocket state
     @property
     def desk_state(self) -> DeskState | None:
@@ -235,6 +255,11 @@ class NetlinkClient:  # pylint: disable=too-many-public-methods
     def access_codes(self) -> AccessCodes | None:
         """Latest access-code state from WebSocket."""
         return self._access_codes
+
+    @property
+    def authorization_state(self) -> AuthorizationState | None:
+        """Latest connection-bound authorization state, if advertised."""
+        return self._authorization_state
 
     @property
     def connected(self) -> bool:

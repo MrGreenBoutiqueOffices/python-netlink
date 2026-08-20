@@ -5,11 +5,14 @@ from __future__ import annotations
 import json
 from dataclasses import asdict
 
+import pytest
 from syrupy.assertion import SnapshotAssertion
 
+from pynetlink.exceptions import NetlinkDataError
 from pynetlink.models import (
     AccessCodes,
     AuthMethods,
+    AuthorizationState,
     BrowserState,
     Desk,
     DeskState,
@@ -289,3 +292,74 @@ def test_state_dict_conversion() -> None:
     assert isinstance(display.state, DisplayState)
     assert display.state.power == "on"
     assert display.state.brightness == 75
+
+
+def test_authorization_state_from_dict_is_immutable() -> None:
+    """Authorization discovery parses into immutable public collections."""
+    allowed_commands = ["command.desk.height", "command.desk.stop"]
+    event_audiences = {"access_codes.state": False}
+
+    state = AuthorizationState.from_dict(
+        {
+            "policy_version": 1,
+            "allowed_commands": allowed_commands,
+            "event_audiences": event_audiences,
+            "maintenance": {"granted": False, "valid_until": None},
+        }
+    )
+
+    allowed_commands.append("command.system.reboot")
+    event_audiences["access_codes.state"] = True
+
+    assert state.policy_version == 1
+    assert state.allowed_commands == frozenset(
+        {"command.desk.height", "command.desk.stop"}
+    )
+    assert state.allows_command("command.desk.height") is True
+    assert state.allows_command("command.system.reboot") is False
+    assert state.receives_event("access_codes.state") is False
+    assert state.receives_event("desk.state") is None
+    assert state.maintenance.granted is False
+    assert state.maintenance.valid_until is None
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {},
+        {
+            "policy_version": "1",
+            "allowed_commands": [],
+            "event_audiences": {},
+            "maintenance": {"granted": False, "valid_until": None},
+        },
+        {
+            "policy_version": 1,
+            "allowed_commands": [1],
+            "event_audiences": {},
+            "maintenance": {"granted": False, "valid_until": None},
+        },
+        {
+            "policy_version": 1,
+            "allowed_commands": [],
+            "event_audiences": {"access_codes.state": "no"},
+            "maintenance": {"granted": False, "valid_until": None},
+        },
+        {
+            "policy_version": 1,
+            "allowed_commands": [],
+            "event_audiences": {},
+            "maintenance": {"granted": "no", "valid_until": None},
+        },
+        {
+            "policy_version": 1,
+            "allowed_commands": [],
+            "event_audiences": {},
+            "maintenance": None,
+        },
+    ],
+)
+def test_authorization_state_rejects_invalid_payloads(payload: dict) -> None:
+    """Malformed authorization discovery payloads fail as public data errors."""
+    with pytest.raises(NetlinkDataError):
+        AuthorizationState.from_dict(payload)

@@ -13,9 +13,13 @@ from socketio import exceptions as socketio_exceptions
 
 from pynetlink.exceptions import (
     NetlinkAuthenticationError,
+    NetlinkAuthorizationError,
     NetlinkCommandError,
     NetlinkConnectionError,
+    NetlinkMaintenanceGrantExpiredError,
+    NetlinkMaintenanceRequiredError,
     NetlinkTimeoutError,
+    NetlinkUnauthorizedError,
 )
 from pynetlink.websocket import NetlinkWebSocket
 
@@ -316,6 +320,40 @@ async def test_websocket_connect_registers_existing_callbacks() -> None:
         await registered_wrappers["desk.state"]({"data": {"height": 91.0}})
 
     assert received == [91.0]
+
+
+async def test_websocket_connect_dispatches_multiple_callbacks_per_event() -> None:
+    """One Socket.IO handler dispatches every callback for the same event."""
+    ws = NetlinkWebSocket(host="192.168.1.100", token="test-token")
+    received: list[str] = []
+
+    @ws.on("authorization.state")
+    async def update_cache(_data: dict) -> None:
+        received.append("cache")
+
+    @ws.on("authorization.state")
+    async def notify_user(_data: dict) -> None:
+        received.append("user")
+
+    with patch.object(socketio, "AsyncClient") as mock_client_class:
+        mock_sio = MagicMock()
+        mock_client_class.return_value = mock_sio
+        mock_sio.connect = AsyncMock()
+        registered_handlers: dict[str, Any] = {}
+
+        def mock_on(event: str) -> Any:
+            def decorator(handler: Any) -> Any:
+                registered_handlers[event] = handler
+                return handler
+
+            return decorator
+
+        mock_sio.on = mock_on
+
+        await ws.connect()
+        await registered_handlers["authorization.state"]({"policy_version": 1})
+
+    assert received == ["cache", "user"]
 
 
 async def test_websocket_wrapper_accepts_no_payload() -> None:
@@ -742,6 +780,43 @@ async def test_websocket_send_command_error() -> None:
         # Command should raise NetlinkCommandError
         with pytest.raises(NetlinkCommandError, match="Height out of range"):
             await command_task
+
+
+@pytest.mark.parametrize(
+    ("error_code", "exception_type"),
+    [
+        ("unauthorized", NetlinkUnauthorizedError),
+        ("maintenance_required", NetlinkMaintenanceRequiredError),
+        ("maintenance_grant_expired", NetlinkMaintenanceGrantExpiredError),
+    ],
+)
+async def test_websocket_maps_authorization_command_errors(
+    error_code: str,
+    exception_type: type[NetlinkAuthorizationError],
+) -> None:
+    """Stable acknowledgement denials map to typed public exceptions."""
+    ws = NetlinkWebSocket(host="192.168.1.100", token="test-token")
+    command_id = "command-id"
+    future: asyncio.Future[dict[str, Any]] = asyncio.Future()
+    ws._pending_commands[command_id] = future
+
+    ws._on_command_ack(
+        {
+            "data": {
+                "id": command_id,
+                "status": "error",
+                "error": error_code,
+                "command": "command.system.reboot",
+            }
+        }
+    )
+
+    with pytest.raises(exception_type, match=error_code) as error:
+        await future
+
+    assert isinstance(error.value, NetlinkCommandError)
+    assert error.value.command == "command.system.reboot"
+    assert error.value.error_details is not None
 
 
 async def test_websocket_send_command_timeout() -> None:
