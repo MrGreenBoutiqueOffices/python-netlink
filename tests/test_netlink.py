@@ -12,7 +12,13 @@ from aiohttp.hdrs import METH_GET, METH_POST, METH_PUT
 from aresponses import ResponsesMockServer
 from syrupy.assertion import SnapshotAssertion
 
-from pynetlink import NetlinkClient, NetlinkConnectionError, NetlinkDataError
+from pynetlink import (
+    NetlinkClient,
+    NetlinkCommandError,
+    NetlinkConnectionError,
+    NetlinkDataError,
+    NetlinkTimeoutError,
+)
 from pynetlink.const import DISPLAY_COMMAND_TIMEOUT
 from pynetlink.models import AuthMethods
 
@@ -1151,6 +1157,74 @@ async def test_client_set_display_source_auto_websocket() -> None:
             {"bus": "4", "attr": "source", "value": "DP"},
             command_timeout=DISPLAY_COMMAND_TIMEOUT,
         )
+
+
+async def test_client_set_display_source_auto_fallback_after_websocket_error() -> None:
+    """Auto transport retries through REST after a WebSocket transport failure."""
+    client = NetlinkClient(host="192.168.1.100", token="test-token")
+    client._ws._connected = True
+    transport_error = NetlinkConnectionError("WebSocket disconnected")
+
+    with (
+        patch.object(
+            client._ws,
+            "send_command",
+            new_callable=AsyncMock,
+            side_effect=transport_error,
+        ) as mock_send,
+        patch.object(
+            client._rest,
+            "set_display_source",
+            new_callable=AsyncMock,
+            return_value={"status": "ok", "transport": "rest"},
+        ) as mock_rest,
+    ):
+        result = await client.set_display_source(bus_id=1, source="HDMI1")
+
+    assert result == {"status": "ok", "transport": "rest"}
+    mock_send.assert_awaited_once_with(
+        "command.display.source",
+        {"bus": "1", "attr": "source", "value": "HDMI1"},
+        command_timeout=DISPLAY_COMMAND_TIMEOUT,
+    )
+    mock_rest.assert_awaited_once_with(1, "HDMI1")
+
+
+@pytest.mark.parametrize(
+    "websocket_error",
+    [
+        NetlinkTimeoutError("Command acknowledgement timed out"),
+        NetlinkCommandError(
+            "Display command failed",
+            command="command.display.source",
+        ),
+    ],
+)
+async def test_client_set_display_source_auto_preserves_websocket_error(
+    websocket_error: Exception,
+) -> None:
+    """Auto transport does not retry an ambiguous or rejected WebSocket command."""
+    client = NetlinkClient(host="192.168.1.100", token="test-token")
+    client._ws._connected = True
+
+    with (
+        patch.object(
+            client._ws,
+            "send_command",
+            new_callable=AsyncMock,
+            side_effect=websocket_error,
+        ),
+        patch.object(
+            client._rest,
+            "set_display_source",
+            new_callable=AsyncMock,
+        ) as mock_rest,
+        pytest.raises(type(websocket_error)) as error,
+    ):
+        await client.set_display_source(bus_id=1, source="HDMI1")
+
+    assert error.value is websocket_error
+    mock_rest.assert_not_awaited()
 
 
 async def test_client_set_display_source_rest_transport(

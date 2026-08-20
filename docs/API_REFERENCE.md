@@ -419,7 +419,7 @@ The netlink-webserver supports a modern WebSocket command system with acknowledg
 | `command.display.source` | `{"bus": "20", "attr": "source", "value": "HDMI1"}` | Set display input source |
 | `command.display.brightness` | `{"bus": "20", "attr": "brightness", "value": 72}` | Set display brightness (0-100) |
 | `command.display.volume` | `{"bus": "20", "attr": "volume", "value": 50}` | Set display volume (0-100) |
-| `command.browser.url` | `{"url": "https://example.com"}` | Set browser URL |
+| `command.browser.set_url` | `{"url": "https://example.com"}` | Set browser URL |
 | `command.browser.refresh` | `{}` | Refresh browser page |
 | `command.access.methods` | `{}` | Get configured login methods for `web_login` and `signing_maintenance` |
 
@@ -446,13 +446,18 @@ from pynetlink import NetlinkClient
 async with NetlinkClient(host, token) as client:
     await client.connect()
 
-    # Uses WebSocket when connected; falls back to REST when not connected
+    # Uses WebSocket when connected; falls back to REST on connection loss
     await client.set_desk_height(120.0, transport="auto")
 
     # Force specific transport
     await client.set_desk_height(120.0, transport="websocket")
     await client.set_desk_height(120.0, transport="rest")
 ```
+
+`transport="auto"` retries through REST only when WebSocket is disconnected or
+raises a connection error. A command acknowledgement timeout is not retried,
+because the device may already have executed the command. Explicit command
+rejections are also returned without a REST retry.
 
 ### GET `/api/v1/admin/access-codes`
 Return the current daily access codes for privileged admin clients.
