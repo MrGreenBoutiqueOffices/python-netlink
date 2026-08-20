@@ -450,6 +450,19 @@ async def test_websocket_connect_with_generic_error() -> None:
             await ws.connect()
 
 
+async def test_websocket_existing_client_surfaces_transport_error() -> None:
+    """A reused Socket.IO client translates a generic connection failure."""
+    ws = NetlinkWebSocket(host="192.168.1.100", token="test-token")
+    mock_sio = AsyncMock()
+    mock_sio.connect.side_effect = socketio_exceptions.ConnectionError(
+        "Network unavailable"
+    )
+    ws._sio = mock_sio
+
+    with pytest.raises(NetlinkConnectionError, match="Failed to connect"):
+        await ws.connect()
+
+
 async def test_websocket_event_registration_with_connection() -> None:
     """Test registering event after connection creates wrapper."""
     ws = NetlinkWebSocket(host="192.168.1.100", token="test-token")
@@ -622,6 +635,26 @@ async def test_websocket_connect_error_callback_is_sanitized() -> None:
         {
             "type": "authentication",
             "message": "Authentication failed for 192.168.1.100",
+        }
+    ]
+
+
+async def test_websocket_connect_error_without_payload_is_transport_error() -> None:
+    """A payload-less Socket.IO failure remains a useful transport event."""
+    ws = NetlinkWebSocket(host="192.168.1.100", token="secret-token")
+    errors: list[dict[str, str]] = []
+
+    @ws.on("connect_error")
+    async def on_connect_error(data: dict[str, str]) -> None:
+        errors.append(data)
+
+    ws._on_connect_error()
+    await asyncio.sleep(0)
+
+    assert errors == [
+        {
+            "type": "transport",
+            "message": "Connection to 192.168.1.100 failed",
         }
     ]
 
