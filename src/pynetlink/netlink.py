@@ -33,7 +33,7 @@ from .rest import NetlinkREST
 from .websocket import NetlinkWebSocket
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Awaitable, Callable
 
     import aiohttp  # pyright: ignore[reportMissingImports]
 
@@ -136,6 +136,29 @@ class NetlinkClient:  # pylint: disable=too-many-public-methods
 
         """
         return self._ws.on(event)
+
+    async def _send_command_auto(
+        self,
+        command_type: str,
+        data: dict[str, Any] | None,
+        rest_call: Callable[[], Awaitable[dict[str, Any]]],
+        *,
+        command_timeout: float | None = None,
+    ) -> dict[str, Any]:
+        """Prefer WebSocket and retry through REST when its transport is unusable."""
+        if not self._ws.connected:
+            return await rest_call()
+
+        args = (command_type,) if data is None else (command_type, data)
+        try:
+            if command_timeout is None:
+                return await self._ws.send_command(*args)
+            return await self._ws.send_command(
+                *args,
+                command_timeout=command_timeout,
+            )
+        except NetlinkConnectionError:
+            return await rest_call()
 
     # Internal event handlers
     async def _on_desk_state(self, data: str | dict[str, Any]) -> None:
@@ -264,12 +287,11 @@ class NetlinkClient:  # pylint: disable=too-many-public-methods
 
         """
         if transport == "auto":
-            if self._ws.connected:
-                return await self._ws.send_command(
-                    "command.desk.height",
-                    {"height": height},
-                )
-            return await self._rest.set_desk_height(height)
+            return await self._send_command_auto(
+                "command.desk.height",
+                {"height": height},
+                lambda: self._rest.set_desk_height(height),
+            )
         if transport == "websocket":
             return await self._ws.send_command(
                 "command.desk.height", {"height": height}
@@ -289,9 +311,11 @@ class NetlinkClient:  # pylint: disable=too-many-public-methods
 
         """
         if transport == "auto":
-            if self._ws.connected:
-                return await self._ws.send_command("command.desk.stop")
-            return await self._rest.stop_desk()
+            return await self._send_command_auto(
+                "command.desk.stop",
+                None,
+                self._rest.stop_desk,
+            )
         if transport == "websocket":
             return await self._ws.send_command("command.desk.stop")
         return await self._rest.stop_desk()
@@ -309,9 +333,11 @@ class NetlinkClient:  # pylint: disable=too-many-public-methods
 
         """
         if transport == "auto":
-            if self._ws.connected:
-                return await self._ws.send_command("command.desk.reset")
-            return await self._rest.reset_desk()
+            return await self._send_command_auto(
+                "command.desk.reset",
+                None,
+                self._rest.reset_desk,
+            )
         if transport == "websocket":
             return await self._ws.send_command("command.desk.reset")
         return await self._rest.reset_desk()
@@ -329,9 +355,11 @@ class NetlinkClient:  # pylint: disable=too-many-public-methods
 
         """
         if transport == "auto":
-            if self._ws.connected:
-                return await self._ws.send_command("command.desk.calibrate")
-            return await self._rest.calibrate_desk()
+            return await self._send_command_auto(
+                "command.desk.calibrate",
+                None,
+                self._rest.calibrate_desk,
+            )
         if transport == "websocket":
             return await self._ws.send_command("command.desk.calibrate")
         return await self._rest.calibrate_desk()
@@ -355,12 +383,11 @@ class NetlinkClient:  # pylint: disable=too-many-public-methods
 
         """
         if transport == "auto":
-            if self._ws.connected:
-                return await self._ws.send_command(
-                    "command.desk.beep",
-                    {"state": state},
-                )
-            return await self._rest.set_desk_beep(state=state)
+            return await self._send_command_auto(
+                "command.desk.beep",
+                {"state": state},
+                lambda: self._rest.set_desk_beep(state=state),
+            )
         if transport == "websocket":
             return await self._ws.send_command("command.desk.beep", {"state": state})
         return await self._rest.set_desk_beep(state=state)
@@ -410,13 +437,12 @@ class NetlinkClient:  # pylint: disable=too-many-public-methods
 
         """
         if transport == "auto":
-            if self._ws.connected:
-                return await self._ws.send_command(
-                    "command.display.power",
-                    {"bus": str(bus_id), "attr": "power", "value": state},
-                    command_timeout=DISPLAY_COMMAND_TIMEOUT,
-                )
-            return await self._rest.set_display_power(bus_id, state)
+            return await self._send_command_auto(
+                "command.display.power",
+                {"bus": str(bus_id), "attr": "power", "value": state},
+                lambda: self._rest.set_display_power(bus_id, state),
+                command_timeout=DISPLAY_COMMAND_TIMEOUT,
+            )
         if transport == "websocket":
             return await self._ws.send_command(
                 "command.display.power",
@@ -445,13 +471,12 @@ class NetlinkClient:  # pylint: disable=too-many-public-methods
 
         """
         if transport == "auto":
-            if self._ws.connected:
-                return await self._ws.send_command(
-                    "command.display.brightness",
-                    {"bus": str(bus_id), "attr": "brightness", "value": brightness},
-                    command_timeout=DISPLAY_COMMAND_TIMEOUT,
-                )
-            return await self._rest.set_display_brightness(bus_id, brightness)
+            return await self._send_command_auto(
+                "command.display.brightness",
+                {"bus": str(bus_id), "attr": "brightness", "value": brightness},
+                lambda: self._rest.set_display_brightness(bus_id, brightness),
+                command_timeout=DISPLAY_COMMAND_TIMEOUT,
+            )
         if transport == "websocket":
             return await self._ws.send_command(
                 "command.display.brightness",
@@ -480,13 +505,12 @@ class NetlinkClient:  # pylint: disable=too-many-public-methods
 
         """
         if transport == "auto":
-            if self._ws.connected:
-                return await self._ws.send_command(
-                    "command.display.volume",
-                    {"bus": str(bus_id), "attr": "volume", "value": volume},
-                    command_timeout=DISPLAY_COMMAND_TIMEOUT,
-                )
-            return await self._rest.set_display_volume(bus_id, volume)
+            return await self._send_command_auto(
+                "command.display.volume",
+                {"bus": str(bus_id), "attr": "volume", "value": volume},
+                lambda: self._rest.set_display_volume(bus_id, volume),
+                command_timeout=DISPLAY_COMMAND_TIMEOUT,
+            )
         if transport == "websocket":
             return await self._ws.send_command(
                 "command.display.volume",
@@ -515,13 +539,12 @@ class NetlinkClient:  # pylint: disable=too-many-public-methods
 
         """
         if transport == "auto":
-            if self._ws.connected:
-                return await self._ws.send_command(
-                    "command.display.source",
-                    {"bus": str(bus_id), "attr": "source", "value": source},
-                    command_timeout=DISPLAY_COMMAND_TIMEOUT,
-                )
-            return await self._rest.set_display_source(bus_id, source)
+            return await self._send_command_auto(
+                "command.display.source",
+                {"bus": str(bus_id), "attr": "source", "value": source},
+                lambda: self._rest.set_display_source(bus_id, source),
+                command_timeout=DISPLAY_COMMAND_TIMEOUT,
+            )
         if transport == "websocket":
             return await self._ws.send_command(
                 "command.display.source",
@@ -559,12 +582,11 @@ class NetlinkClient:  # pylint: disable=too-many-public-methods
 
         """
         if transport == "auto":
-            if self._ws.connected:
-                return await self._ws.send_command(
-                    "command.browser.set_url",
-                    {"url": url},
-                )
-            return await self._rest.set_browser_url(url)
+            return await self._send_command_auto(
+                "command.browser.set_url",
+                {"url": url},
+                lambda: self._rest.set_browser_url(url),
+            )
         if transport == "websocket":
             return await self._ws.send_command(
                 "command.browser.set_url",
@@ -585,9 +607,11 @@ class NetlinkClient:  # pylint: disable=too-many-public-methods
 
         """
         if transport == "auto":
-            if self._ws.connected:
-                return await self._ws.send_command("command.browser.refresh")
-            return await self._rest.refresh_browser()
+            return await self._send_command_auto(
+                "command.browser.refresh",
+                None,
+                self._rest.refresh_browser,
+            )
         if transport == "websocket":
             return await self._ws.send_command("command.browser.refresh")
         return await self._rest.refresh_browser()
