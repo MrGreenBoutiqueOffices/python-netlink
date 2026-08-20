@@ -74,6 +74,7 @@ Basic example showing connection and desk control:
 import asyncio
 from pynetlink import NetlinkClient
 
+
 async def main() -> None:
     """Quick start example."""
     # Create client with device IP and bearer token
@@ -96,6 +97,7 @@ async def main() -> None:
             await client.set_display_brightness(displays[0].bus, 80)
             print("Display brightness set to 80%")
 
+
 if __name__ == "__main__":
     asyncio.run(main())
 ```
@@ -110,6 +112,7 @@ Automatically find NetLink devices on your network using mDNS/Zeroconf:
 
 ```python
 from pynetlink import NetlinkClient
+
 
 async def discover() -> None:
     """Discover all NetLink devices."""
@@ -168,6 +171,7 @@ from pynetlink import (
     EVENT_MONITOR_STATE,
 )
 
+
 async def listen_all_events() -> None:
     """Listen to all WebSocket events."""
     async with NetlinkClient(host, token) as client:
@@ -178,7 +182,7 @@ async def listen_all_events() -> None:
             """Desk state changed."""
             state = data.get("state", data)
             print(f"📊 Desk: {state['height']}cm, {state['mode']}")
-            if state.get('moving'):
+            if state.get("moving"):
                 print(f"  → Target: {state.get('target')}cm")
 
         @client.on(EVENT_MONITOR_STATE)
@@ -279,7 +283,7 @@ async def move_desk() -> None:
         @client.on("desk.state")
         async def on_desk_state(data: dict) -> None:
             state = data.get("state", data)
-            if state['moving']:
+            if state["moving"]:
                 print(f"Moving... {state['height']}cm → {state['target']}cm")
             else:
                 print(f"Stopped at {state['height']}cm")
@@ -319,7 +323,7 @@ async def calibrate() -> None:
 ```python
 async def desk_presets() -> None:
     """Move to preset heights."""
-    SITTING = 75.0   # cm
+    SITTING = 75.0  # cm
     STANDING = 120.0  # cm
 
     async with NetlinkClient(host, token) as client:
@@ -507,6 +511,7 @@ Handle different error scenarios:
 ```python
 from pynetlink import NetlinkClient, NetlinkAuthenticationError
 
+
 async def handle_auth_error() -> None:
     """Handle invalid token."""
     try:
@@ -521,6 +526,7 @@ async def handle_auth_error() -> None:
 
 ```python
 from pynetlink import NetlinkConnectionError, NetlinkTimeoutError
+
 
 async def handle_connection_errors() -> None:
     """Handle connection issues."""
@@ -537,6 +543,7 @@ async def handle_connection_errors() -> None:
 
 ```python
 from pynetlink import NetlinkCommandError
+
 
 async def handle_command_errors() -> None:
     """Handle command execution errors."""
@@ -563,6 +570,7 @@ from pynetlink import (
     NetlinkConnectionError,
     NetlinkTimeoutError,
 )
+
 
 async def comprehensive_error_handling() -> None:
     """Handle all error types."""
@@ -603,6 +611,7 @@ async def custom_timeout() -> None:
 ```python
 import aiohttp
 
+
 async def shared_session() -> None:
     """Use shared aiohttp session."""
     async with aiohttp.ClientSession() as session:
@@ -631,16 +640,10 @@ async def control_multiple_devices() -> None:
         clients.append(client)
 
     # Control all desks simultaneously
-    await asyncio.gather(*[
-        client.set_desk_height(120.0)
-        for client in clients
-    ])
+    await asyncio.gather(*[client.set_desk_height(120.0) for client in clients])
 
     # Cleanup
-    await asyncio.gather(*[
-        client.disconnect()
-        for client in clients
-    ])
+    await asyncio.gather(*[client.disconnect() for client in clients])
 ```
 
 ### Context-Free Usage
@@ -669,13 +672,13 @@ All responses use type-safe dataclasses with [mashumaro](https://github.com/Fata
 ```python
 @dataclass
 class DeskState:
-    height: float              # Current height in cm
-    mode: str                  # "idle", "moving_up", "moving_down", etc.
-    moving: bool               # Is desk currently moving
-    error: str                 # Error message if any
-    target: float | None       # Target height when moving
+    height: float  # Current height in cm
+    mode: str  # "idle", "moving_up", "moving_down", etc.
+    moving: bool  # Is desk currently moving
+    error: str  # Error message if any
+    target: float | None  # Target height when moving
     capabilities: dict | None  # Desk capabilities
-    inventory: dict | None     # Desk inventory info
+    inventory: dict | None  # Desk inventory info
 ```
 
 ### Display (WebSocket)
@@ -684,22 +687,25 @@ class DeskState:
 @dataclass
 class DisplayState:
     """Current state values (nested in Display)."""
-    power: str | None               # "on", "off"
-    source: str | None              # "HDMI1", "USBC", etc.
-    brightness: int | None          # 0-100
-    volume: int | None              # 0-100
-    error: str | None               # Error message if any
+
+    power: str | None  # "on", "off"
+    source: str | None  # "HDMI1", "USBC", etc.
+    brightness: int | None  # 0-100
+    volume: int | None  # 0-100
+    error: str | None  # Error message if any
+
 
 @dataclass
 class Display:
     """Full display information with capabilities and state."""
-    bus: int | str                   # I2C bus ID
-    model: str                       # Display model
-    type: str                        # "display", "tablet"
-    supports: dict[str, Any]         # Capabilities (e.g., {"power": True, "brightness": True})
-    state: DisplayState              # Nested current state values
-    serial_number: str | None        # Serial number
-    source_options: list[str] | None # Available input sources
+
+    bus: int | str  # I2C bus ID
+    model: str  # Display model
+    type: str  # "display", "tablet"
+    supports: dict[str, Any]  # Capabilities (e.g., {"power": True, "brightness": True})
+    state: DisplayState  # Nested current state values
+    serial_number: str | None  # Serial number
+    source_options: list[str] | None  # Available input sources
 ```
 
 **Breaking Change (v0.2.0)**: Display now has a nested structure:
@@ -713,16 +719,16 @@ class Display:
 ```python
 @dataclass
 class NetlinkDevice:
-    name: str            # Device name
-    host: str            # IP address
-    port: int            # Port (usually 80)
-    device_id: str       # Unique ID
-    model: str           # Device model
-    version: str         # Software version
-    api_version: str     # API version
-    has_desk: bool       # Has desk control
+    name: str  # Device name
+    host: str  # IP address
+    port: int  # Port (usually 80)
+    device_id: str  # Unique ID
+    model: str  # Device model
+    version: str  # Software version
+    api_version: str  # API version
+    has_desk: bool  # Has desk control
     displays: list[str]  # Display bus IDs
-    ws_path: str         # WebSocket path
+    ws_path: str  # WebSocket path
 ```
 
 ---
