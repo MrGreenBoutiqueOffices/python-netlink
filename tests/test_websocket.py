@@ -52,7 +52,7 @@ async def test_websocket_connect_auth_error() -> None:
         )
         mock_sio.on = MagicMock(return_value=lambda f: f)  # Fix: non-async decorator
 
-        with pytest.raises(NetlinkConnectionError, match="Failed to connect"):
+        with pytest.raises(NetlinkAuthenticationError, match="Authentication failed"):
             await ws.connect()
 
         assert ws.connected is False
@@ -82,7 +82,7 @@ async def test_websocket_disconnect() -> None:
         mock_sio = AsyncMock()
         mock_client_class.return_value = mock_sio
         mock_sio.connect = AsyncMock()
-        mock_sio.disconnect = AsyncMock()
+        mock_sio.shutdown = AsyncMock()
         mock_sio.on = MagicMock(return_value=lambda f: f)  # Fix: non-async decorator
 
         # Connect first
@@ -92,7 +92,7 @@ async def test_websocket_disconnect() -> None:
         # Then disconnect
         await ws.disconnect()
         assert ws.connected is False
-        mock_sio.disconnect.assert_called_once()
+        mock_sio.shutdown.assert_awaited_once()
 
 
 async def test_websocket_event_subscription() -> None:
@@ -248,12 +248,11 @@ async def test_websocket_connect_without_previous_disconnect() -> None:
         await ws.connect()
         assert ws.connected is True
 
-        # Second connect (should reuse same client)
+        # A duplicate connect is ignored to prevent overlapping attempts.
         await ws.connect()
         assert ws.connected is True
 
-        # Connect should only be called twice (once per connect call)
-        assert mock_sio.connect.call_count == 2
+        mock_sio.connect.assert_awaited_once()
 
 
 async def test_websocket_disconnect_when_not_connected() -> None:
@@ -325,8 +324,8 @@ async def test_websocket_wrapper_accepts_no_payload() -> None:
 
     seen: list[dict] = []
 
-    @ws.on("connect")
-    def on_connect(data: dict) -> None:
+    @ws.on("ready")
+    def on_ready(data: dict) -> None:
         seen.append(data)
 
     with patch.object(socketio, "AsyncClient") as mock_client_class:
@@ -347,8 +346,8 @@ async def test_websocket_wrapper_accepts_no_payload() -> None:
 
         await ws.connect()
 
-        assert "connect" in registered_wrappers
-        await registered_wrappers["connect"]()
+        assert "ready" in registered_wrappers
+        await registered_wrappers["ready"]()
 
     assert seen == [{}]
 
@@ -359,8 +358,8 @@ async def test_websocket_wrapper_ignores_extra_args() -> None:
 
     seen: list[dict] = []
 
-    @ws.on("connect")
-    def on_connect(data: dict) -> None:
+    @ws.on("ready")
+    def on_ready(data: dict) -> None:
         seen.append(data)
 
     with patch.object(socketio, "AsyncClient") as mock_client_class:
@@ -381,10 +380,8 @@ async def test_websocket_wrapper_ignores_extra_args() -> None:
 
         await ws.connect()
 
-        assert "connect" in registered_wrappers
-        await registered_wrappers["connect"](
-            {"data": {"height": 120}}, {"ignored": True}
-        )
+        assert "ready" in registered_wrappers
+        await registered_wrappers["ready"]({"data": {"height": 120}}, {"ignored": True})
 
     assert seen == [{"height": 120}]
 
@@ -528,47 +525,42 @@ async def test_websocket_sync_callback_wrapper_with_connection() -> None:
         assert values == [77.0]
 
 
-async def test_websocket_auto_reconnect_disabled() -> None:
-    """Test WebSocket with auto-reconnect disabled."""
+async def test_websocket_configures_socketio_reconnection() -> None:
+    """Socket.IO is the sole owner of explicitly bounded reconnection."""
     ws = NetlinkWebSocket(
         host="192.168.1.100",
         token="test-token",
-        auto_reconnect=False,
+        reconnect_delay=2.0,
+        max_reconnect_delay=30.0,
     )
-
-    # Simulate disconnect event
-    ws._on_disconnect()
-
-    # No reconnection task should be created
-    assert ws._reconnect_task is None
-
-
-async def test_websocket_disconnect_cancels_reconnect() -> None:
-    """Test that disconnect cancels pending reconnection."""
-    ws = NetlinkWebSocket(host="192.168.1.100", token="test-token")
 
     with patch.object(socketio, "AsyncClient") as mock_client_class:
         mock_sio = AsyncMock()
         mock_client_class.return_value = mock_sio
         mock_sio.connect = AsyncMock()
-        mock_sio.disconnect = AsyncMock()
         mock_sio.on = MagicMock(return_value=lambda f: f)
 
-        # Connect
         await ws.connect()
 
-        # Simulate disconnect to trigger auto-reconnect
-        ws._on_disconnect()
+    mock_client_class.assert_called_once_with(
+        reconnection=True,
+        reconnection_delay=2.0,
+        reconnection_delay_max=30.0,
+        randomization_factor=0,
+    )
 
-        # Verify reconnect task was created
-        assert ws._reconnect_task is not None
-        assert not ws._reconnect_task.done()
 
-        # Now disconnect - should cancel the task
-        await ws.disconnect()
+async def test_websocket_disconnect_uses_socketio_shutdown() -> None:
+    """Intentional shutdown also aborts Socket.IO's reconnect loop."""
+    ws = NetlinkWebSocket(host="192.168.1.100", token="test-token")
+    mock_sio = AsyncMock()
+    ws._sio = mock_sio
 
-        # Verify task was cancelled
-        assert ws._reconnect_task.done()
+    await ws.disconnect()
+
+    mock_sio.shutdown.assert_awaited_once()
+    assert ws._sio is None
+    assert ws.connected is False
 
 
 async def test_websocket_on_connect_event() -> None:
@@ -614,102 +606,24 @@ async def test_websocket_on_disconnect_event() -> None:
     assert disconnect_called is True
 
 
-async def test_websocket_auto_reconnect_exponential_backoff() -> None:
-    """Test auto-reconnect with exponential backoff."""
-    ws = NetlinkWebSocket(
-        host="192.168.1.100",
-        token="test-token",
-        reconnect_delay=0.01,  # Short delay for fast test
-        max_reconnect_delay=0.08,  # Max is 8x initial delay
-    )
+async def test_websocket_connect_error_callback_is_sanitized() -> None:
+    """Connection failures are typed without echoing server details or tokens."""
+    ws = NetlinkWebSocket(host="192.168.1.100", token="secret-token")
+    errors: list[dict[str, str]] = []
 
-    with patch.object(socketio, "AsyncClient") as mock_client_class:
-        mock_sio = AsyncMock()
-        mock_client_class.return_value = mock_sio
-        mock_sio.on = MagicMock(return_value=lambda f: f)
+    @ws.on("connect_error")
+    async def on_connect_error(data: dict[str, str]) -> None:
+        errors.append(data)
 
-        # First 3 attempts fail, 4th succeeds
-        mock_sio.connect = AsyncMock(
-            side_effect=[
-                socketio_exceptions.ConnectionError("Failed 1"),
-                socketio_exceptions.ConnectionError("Failed 2"),
-                socketio_exceptions.ConnectionError("Failed 3"),
-                None,  # Success
-            ]
-        )
+    ws._on_connect_error({"message": "Unauthorized: secret-token"})
+    await asyncio.sleep(0)
 
-        # Start auto-reconnect
-        # Will try: 0.01s -> fail -> 0.02s -> fail -> 0.04s -> fail -> 0.08s -> success
-        reconnect_task = asyncio.create_task(ws._auto_reconnect())
-
-        # Wait for reconnection to complete (~0.15s total)
-        await asyncio.wait_for(reconnect_task, timeout=1.0)
-
-        # After successful reconnection, delay should be reset to initial value
-        assert ws.connected is True
-        assert ws._current_delay == 0.01
-
-
-async def test_websocket_auto_reconnect_stops_on_auth_error() -> None:
-    """Test auto-reconnect stops on authentication error."""
-    ws = NetlinkWebSocket(
-        host="192.168.1.100",
-        token="invalid",
-        reconnect_delay=0.01,  # Very short delay for faster test
-    )
-
-    with patch.object(socketio, "AsyncClient") as mock_client_class:
-        mock_sio = AsyncMock()
-        mock_client_class.return_value = mock_sio
-        mock_sio.on = MagicMock(return_value=lambda f: f)
-
-        # Simulate authentication error - use "unauthorized" keyword
-        # connect() checks for "unauthorized" (case-insensitive)
-        mock_sio.connect = AsyncMock(
-            side_effect=socketio_exceptions.ConnectionError("Unauthorized access")
-        )
-
-        # Start auto-reconnect
-        reconnect_task = asyncio.create_task(ws._auto_reconnect())
-
-        # Wait for it to stop (should detect auth error and stop immediately)
-        await asyncio.wait_for(reconnect_task, timeout=1.0)
-
-        # Should have stopped reconnecting after detecting auth error
-        assert ws._should_reconnect is False
-        # Connect is called once - then auth error stops reconnection
-        assert mock_sio.connect.call_count == 1
-
-
-async def test_websocket_auto_reconnect_unexpected_error_then_success() -> None:
-    """Test auto-reconnect handles connection errors and retries."""
-    ws = NetlinkWebSocket(
-        host="192.168.1.100",
-        token="test-token",
-        reconnect_delay=0.0,
-        max_reconnect_delay=0.01,
-    )
-
-    # First attempt raises generic error, second succeeds
-    ws_connect_mock = AsyncMock(side_effect=[NetlinkConnectionError("boom"), None])
-
-    with (
-        patch.object(ws, "connect", ws_connect_mock),
-        patch("asyncio.sleep", new_callable=AsyncMock),
-    ):
-        reconnect_task = asyncio.create_task(ws._auto_reconnect())
-        await asyncio.wait_for(reconnect_task, timeout=1.0)
-
-    # After unexpected error we should have retried
-    assert ws_connect_mock.call_count == 2
-
-
-async def test_websocket_auto_reconnect_skips_when_disabled() -> None:
-    """Test auto-reconnect exits immediately when disabled."""
-    ws = NetlinkWebSocket(host="192.168.1.100", token="test-token")
-    ws._should_reconnect = False
-
-    await ws._auto_reconnect()
+    assert errors == [
+        {
+            "type": "authentication",
+            "message": "Authentication failed for 192.168.1.100",
+        }
+    ]
 
 
 async def test_websocket_send_command_success() -> None:
