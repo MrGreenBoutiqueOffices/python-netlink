@@ -177,6 +177,7 @@ from pynetlink import EVENT_AUTHORIZATION_STATE, NetlinkClient
 
 async def inspect_authorization() -> None:
     async with NetlinkClient(host, token) as client:
+
         @client.on(EVENT_AUTHORIZATION_STATE)
         async def on_authorization_change(_data: dict) -> None:
             state = client.authorization_state
