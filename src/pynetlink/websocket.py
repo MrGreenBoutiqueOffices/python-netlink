@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import logging
 import uuid
 from dataclasses import dataclass, field
@@ -29,6 +28,8 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
 _LOGGER = logging.getLogger(__name__)
+_LIFECYCLE_EVENTS = frozenset({"connect", "connect_error", "disconnect"})
+_AUTH_ERROR_MARKERS = ("auth", "forbidden", "invalid token", "unauthorized")
 
 
 @dataclass
@@ -61,9 +62,14 @@ class NetlinkWebSocket:
         repr=False,
     )
     _connected: bool = field(default=False, init=False, repr=False)
-    _reconnect_task: asyncio.Task | None = field(default=None, init=False, repr=False)
-    _should_reconnect: bool = field(default=True, init=False, repr=False)
-    _current_delay: float = field(init=False, repr=False)
+    _connect_lock: asyncio.Lock = field(
+        default_factory=asyncio.Lock,
+        init=False,
+        repr=False,
+    )
+    _last_connect_error: NetlinkConnectionError | NetlinkAuthenticationError | None = (
+        field(default=None, init=False, repr=False)
+    )
 
     # Command acknowledgement tracking
     _pending_commands: dict[str, asyncio.Future[dict[str, Any]]] = field(
@@ -71,10 +77,6 @@ class NetlinkWebSocket:
         init=False,
         repr=False,
     )
-
-    def __post_init__(self) -> None:
-        """Initialize internal state after dataclass initialization."""
-        self._current_delay = self.reconnect_delay
 
     async def connect(self) -> None:
         """Connect to NetLink WebSocket.
@@ -86,58 +88,62 @@ class NetlinkWebSocket:
             NetlinkTimeoutError: Connection timeout
 
         """
-        if self._sio is None:
-            self._sio = socketio.AsyncClient()
+        async with self._connect_lock:
+            if self.connected:
+                return
 
-            # Register Socket.IO built-in event handlers
-            self._sio.on("connect")(self._on_connect)
-            self._sio.on("disconnect")(self._on_disconnect)
-
-            # Register command acknowledgement handler
-            self._sio.on("command_ack")(self._on_command_ack)
-
-            # Register any callbacks that were added before connect()
-            for event, callbacks in self._callbacks.items():
-                for callback in callbacks:
-                    self._sio.on(event)(self._wrap_callback(callback))
-
-        try:
-            async with asyncio.timeout(DEFAULT_CONNECT_TIMEOUT):
-                await self._sio.connect(
-                    f"http://{self.host}",
-                    auth={"token": self.token},
-                    transports=["websocket"],
+            if self._sio is None:
+                self._sio = socketio.AsyncClient(
+                    reconnection=self.auto_reconnect,
+                    reconnection_delay=self.reconnect_delay,
+                    reconnection_delay_max=self.max_reconnect_delay,
+                    randomization_factor=0,
                 )
-                self._connected = True
-                self._current_delay = (
-                    self.reconnect_delay
-                )  # Reset delay on successful connect
-        except TimeoutError as err:
-            msg = f"Connection to {self.host} timed out"
-            raise NetlinkTimeoutError(msg) from err
-        except socketio_exceptions.ConnectionError as err:
-            # Check if it's an auth error (Socket.IO returns False from connect handler)
-            if "unauthorized" in str(err).lower():
-                msg = f"Authentication failed for {self.host}"
-                raise NetlinkAuthenticationError(msg) from err
-            msg = f"Failed to connect to {self.host}: {err}"
-            raise NetlinkConnectionError(msg) from err
-        except Exception as err:
-            msg = f"Unexpected error connecting to {self.host}: {err}"
-            raise NetlinkConnectionError(msg) from err
+
+                # Register Socket.IO built-in event handlers
+                self._sio.on("connect")(self._on_connect)
+                self._sio.on("connect_error")(self._on_connect_error)
+                self._sio.on("disconnect")(self._on_disconnect)
+
+                # Register command acknowledgement handler
+                self._sio.on("command_ack")(self._on_command_ack)
+
+                # Lifecycle callbacks are emitted by the internal handlers above.
+                for event, callbacks in self._callbacks.items():
+                    if event in _LIFECYCLE_EVENTS:
+                        continue
+                    for callback in callbacks:
+                        self._sio.on(event)(self._wrap_callback(callback))
+
+            self._last_connect_error = None
+            try:
+                async with asyncio.timeout(DEFAULT_CONNECT_TIMEOUT):
+                    await self._sio.connect(
+                        f"http://{self.host}",
+                        auth={"token": self.token},
+                        transports=["websocket"],
+                    )
+                    self._connected = True
+            except TimeoutError as err:
+                msg = f"Connection to {self.host} timed out"
+                raise NetlinkTimeoutError(msg) from err
+            except socketio_exceptions.ConnectionError as err:
+                if isinstance(self._last_connect_error, NetlinkAuthenticationError):
+                    raise self._last_connect_error from err
+                if any(marker in str(err).lower() for marker in _AUTH_ERROR_MARKERS):
+                    msg = f"Authentication failed for {self.host}"
+                    raise NetlinkAuthenticationError(msg) from err
+                msg = f"Failed to connect to {self.host}: {err}"
+                raise NetlinkConnectionError(msg) from err
+            except Exception as err:
+                msg = f"Unexpected error connecting to {self.host}: {err}"
+                raise NetlinkConnectionError(msg) from err
 
     async def disconnect(self) -> None:
         """Disconnect from WebSocket and stop auto-reconnection."""
-        self._should_reconnect = False
-
-        # Cancel any pending reconnection task
-        if self._reconnect_task and not self._reconnect_task.done():
-            self._reconnect_task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await self._reconnect_task
-
         if self._sio:
-            await self._sio.disconnect()
+            # shutdown() also stops python-socketio's active reconnect loop.
+            await self._sio.shutdown()
             self._sio = None
             self._connected = False
 
@@ -168,7 +174,7 @@ class NetlinkWebSocket:
             self._callbacks[event].append(callback)
 
             # Register wrapper with Socket.IO
-            if self._sio:
+            if self._sio and event not in _LIFECYCLE_EVENTS:
                 self._sio.on(event)(self._wrap_callback(callback))
 
             return callback
@@ -299,12 +305,39 @@ class NetlinkWebSocket:
         """Handle Socket.IO connect event."""
         _LOGGER.info("Connected to %s", self.host)
         self._connected = True
-        self._current_delay = self.reconnect_delay  # Reset backoff delay
+        self._last_connect_error = None
 
         # Emit connect event to user callbacks (fire-and-forget task)
         asyncio.create_task(self.emit_to_callbacks("connect", {}))  # noqa: RUF006
 
-    def _on_disconnect(self) -> None:
+    def _on_connect_error(self, data: Any = None) -> None:
+        """Translate a Socket.IO connection error without exposing credentials."""
+        if isinstance(data, dict):
+            detail = str(data.get("message", "Connection failed"))
+        elif data is None:
+            detail = "Connection failed"
+        else:
+            detail = str(data)
+
+        error_type = "transport"
+        if any(marker in detail.lower() for marker in _AUTH_ERROR_MARKERS):
+            error_type = "authentication"
+            error: NetlinkConnectionError | NetlinkAuthenticationError = (
+                NetlinkAuthenticationError(f"Authentication failed for {self.host}")
+            )
+        else:
+            error = NetlinkConnectionError(f"Connection to {self.host} failed")
+        self._last_connect_error = error
+
+        _LOGGER.warning("Connection to %s failed (%s)", self.host, error_type)
+        asyncio.create_task(  # noqa: RUF006
+            self.emit_to_callbacks(
+                "connect_error",
+                {"type": error_type, "message": str(error)},
+            )
+        )
+
+    def _on_disconnect(self, _reason: Any = None) -> None:
         """Handle Socket.IO disconnect event."""
         _LOGGER.warning("Disconnected from %s", self.host)
         self._connected = False
@@ -312,20 +345,16 @@ class NetlinkWebSocket:
         # Emit disconnect event to user callbacks (fire-and-forget task)
         asyncio.create_task(self.emit_to_callbacks("disconnect", {}))  # noqa: RUF006
 
-        # Cancel all pending commands
-        for command_id, future in self._pending_commands.items():
+        # Clear first so repeated disconnect callbacks cannot fail a future twice.
+        pending_commands = list(self._pending_commands.items())
+        self._pending_commands.clear()
+        for command_id, future in pending_commands:
             if not future.done():
                 future.set_exception(
                     NetlinkConnectionError(
                         f"Disconnected while waiting for command {command_id}"
                     ),
                 )
-        self._pending_commands.clear()
-
-        # Start auto-reconnection if enabled and not intentionally disconnected
-        if self.auto_reconnect and self._should_reconnect:
-            _LOGGER.info("Auto-reconnection enabled, scheduling reconnect")
-            self._reconnect_task = asyncio.create_task(self._auto_reconnect())
 
     def _on_command_ack(self, ack_data: dict[str, Any]) -> None:
         """Handle command acknowledgement from server.
@@ -377,43 +406,3 @@ class NetlinkWebSocket:
         else:
             # Command succeeded
             future.set_result(data)
-
-    async def _auto_reconnect(self) -> None:
-        """Automatically reconnect with exponential backoff."""
-        while self._should_reconnect:
-            try:
-                _LOGGER.info(
-                    "Attempting to reconnect to %s in %.1f seconds...",
-                    self.host,
-                    self._current_delay,
-                )
-                await asyncio.sleep(self._current_delay)
-
-                # Try to reconnect
-                await self.connect()
-            except NetlinkAuthenticationError:
-                # Don't retry on auth errors
-                _LOGGER.exception("Reconnection failed: Authentication error")
-                self._should_reconnect = False
-                return
-
-            except (NetlinkConnectionError, NetlinkTimeoutError) as err:
-                # Increase delay with exponential backoff
-                self._current_delay = min(
-                    self._current_delay * 2,
-                    self.max_reconnect_delay,
-                )
-                _LOGGER.warning(
-                    "Reconnection attempt failed: %s. Next attempt in %.1f seconds",
-                    err,
-                    self._current_delay,
-                )
-
-            except asyncio.CancelledError:
-                _LOGGER.info("Reconnection task cancelled")
-                return
-
-            else:
-                # Connection successful
-                _LOGGER.info("Successfully reconnected to %s", self.host)
-                return
