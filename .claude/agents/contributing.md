@@ -3,8 +3,8 @@
 Keep this aligned with the canonical `CONTRIBUTING.md` and project governance.
 
 ## Project Tooling
-- Dependency manager: Poetry.
-- Pre-commit runner: prek (`poetry run prek run --all-files`).
+- Dependency manager: uv.
+- Pre-commit runner: prek (`uv run prek run --all-files`).
 
 ## Expectations
 - Follow existing patterns in `src/pynetlink`.
