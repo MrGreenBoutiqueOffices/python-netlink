@@ -12,10 +12,10 @@ Preserve the public API (names/signatures/behavior) unless explicitly requested.
 - Tests/fixtures: `tests/` + `tests/fixtures/*.json` + snapshots in `tests/__snapshots__/`
 
 ## Dev Workflows
-- Install: `poetry install`
-- Tests: `poetry run pytest` (async tests; snapshot assertions via syrupy)
-- Update snapshots: `poetry run pytest --snapshot-update`
-- All checks (CI-like): `poetry run prek run --all-files` (consider `poetry run prek install`)
+- Install: `uv sync --locked`
+- Tests: `uv run pytest` (async tests; snapshot assertions via syrupy)
+- Update snapshots: `uv run pytest --snapshot-update`
+- All checks (CI-like): `uv run prek run --all-files` (consider `uv run prek install`)
 
 ## Project Conventions (important for correct behavior)
 - Async-first: `NetlinkClient` is an async context manager; WebSocket connects via `await client.connect()`.
