@@ -3,8 +3,8 @@
 Focus on tests that validate external behavior and guard against regressions.
 
 ## Commands
-- Tests: `poetry run pytest`
-- Snapshot update: `poetry run pytest --snapshot-update`
+- Tests: `uv run pytest`
+- Snapshot update: `uv run pytest --snapshot-update`
 
 ## Tips
 - Prefer targeted tests for faster feedback.

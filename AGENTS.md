@@ -13,13 +13,13 @@ prioritize details that help with navigation, safe changes, and testing.
 
 ## Environment
 - Python: 3.12+
-- Dependency manager: Poetry
+- Dependency manager: uv
 
 ## Common Commands
-- Install deps: `poetry install`
-- Run tests: `poetry run pytest`
-- Update snapshots: `poetry run pytest --snapshot-update`
-- Lint/test all (prek): `poetry run prek run --all-files`
+- Install deps: `uv sync --locked`
+- Run tests: `uv run pytest`
+- Update snapshots: `uv run pytest --snapshot-update`
+- Lint/test all (prek): `uv run prek run --all-files`
 
 ## Development Notes
 - Prefer async/await patterns and typed models.
