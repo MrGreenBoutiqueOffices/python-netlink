@@ -34,7 +34,7 @@ Before running the examples, configure your NetLink device credentials:
 
 3. Install dependencies (if running examples locally):
    ```bash
-   poetry install
+   uv sync --locked
    ```
 
 All examples will automatically load credentials from the `.env` file.
