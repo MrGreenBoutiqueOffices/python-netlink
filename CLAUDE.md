@@ -11,12 +11,12 @@ agent docs for deeper guidance.
 
 ## Setup
 - Python: 3.12+
-- Install deps: `poetry install`
+- Install deps: `uv sync --locked`
 
 ## Common Commands
-- Tests: `poetry run pytest`
-- Snapshot update: `poetry run pytest --snapshot-update`
-- All checks (prek): `poetry run prek run --all-files`
+- Tests: `uv run pytest`
+- Snapshot update: `uv run pytest --snapshot-update`
+- All checks (prek): `uv run prek run --all-files`
 
 ## Coding Guidelines
 - Preserve public API names and signatures.
