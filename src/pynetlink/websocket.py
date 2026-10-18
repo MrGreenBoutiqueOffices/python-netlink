@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 import logging
 import uuid
 from dataclasses import dataclass, field
@@ -220,7 +221,7 @@ class NetlinkWebSocket:
         """
         if event in self._callbacks:
             for callback in self._callbacks[event]:
-                if asyncio.iscoroutinefunction(callback):
+                if inspect.iscoroutinefunction(callback):
                     await callback(data)
                 else:
                     callback(data)
@@ -229,7 +230,7 @@ class NetlinkWebSocket:
         """Run sync lifecycle callbacks now and schedule async callbacks."""
         async_callbacks = []
         for callback in self._callbacks.get(event, []):
-            if asyncio.iscoroutinefunction(callback):
+            if inspect.iscoroutinefunction(callback):
                 async_callbacks.append(callback)
             else:
                 callback(data)
