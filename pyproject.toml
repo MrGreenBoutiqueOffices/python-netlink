@@ -6,16 +6,16 @@ authors = [{ name="Klaas Schoute", email="k.schoute@net-os.com"}]
 maintainers = [{name="Klaas Schoute", email="k.schoute@net-os.com"}]
 license = "LGPL-3.0-or-later"
 license-files = ["LICENSE"]
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 readme = "README.md"
 keywords = ["pynetlink", "netlink", "desk", "display", "home-assistant", "iot", "api", "async", "client"]
 classifiers = [
   "Framework :: AsyncIO",
   "Intended Audience :: Developers",
   "Natural Language :: English",
-  "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
   "Programming Language :: Python :: 3",
   "Topic :: Software Development :: Libraries :: Python Modules",
 ]
@@ -79,11 +79,15 @@ max-line-length = 88
 max-attributes = 20
 max-public-methods = 25
 
+[tool.ty.environment]
+python-version = "3.13"
+
 [tool.pytest.ini_options]
 addopts = "--cov"
 asyncio_mode = "auto"
 
 [tool.ruff]
+target-version = "py313"
 lint.select = ["ALL"]
 lint.ignore = [
   "ANN401",  # Opinionated warning on disallowing dynamically typed expressions

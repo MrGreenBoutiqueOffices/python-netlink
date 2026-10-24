@@ -10,7 +10,7 @@ agent docs for deeper guidance.
 - Examples/docs: `examples/` and `examples/README.md`
 
 ## Setup
-- Python: 3.12+
+- Python: 3.13+
 - Install deps: `uv sync --locked`
 
 ## Common Commands
