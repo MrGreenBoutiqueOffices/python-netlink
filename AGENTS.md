@@ -12,7 +12,7 @@ prioritize details that help with navigation, safe changes, and testing.
 - Public entrypoint: `NetlinkClient` in `src/pynetlink/netlink.py`
 
 ## Environment
-- Python: 3.12+
+- Python: 3.13+
 - Dependency manager: uv
 
 ## Common Commands

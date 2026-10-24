@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture(name="netlink_client")
-async def client() -> AsyncGenerator[NetlinkClient, None]:
+async def client() -> AsyncGenerator[NetlinkClient]:
     """Return a NetlinkClient instance.
 
     This creates a client without connecting to avoid real network calls.
