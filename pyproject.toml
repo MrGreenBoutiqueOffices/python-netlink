@@ -43,7 +43,7 @@ dev = [
   "python-dotenv==1.2.4",
   "ruff==0.17.3",
   "syrupy==6.1.1",
-  "ty==0.0.94",
+  "ty==0.0.95",
   "yamllint==1.38.0",
   "zizmor==1.31.1",
 ]
